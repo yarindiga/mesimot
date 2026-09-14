@@ -212,64 +212,63 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 .rows{
   background:var(--surface);border:1px solid var(--line);border-radius:12px;
-  box-shadow:var(--shadow-1);overflow:hidden;
+  box-shadow:var(--shadow-1);
 }
-.rows:has(.stpop){overflow:visible}
 .row{
-  position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:5px 10px;
-  min-height:46px;padding:9px 15px 9px 12px;
-  border-top:1px solid var(--line);cursor:pointer;transition:background .12s;
+  position:relative;display:flex;align-items:flex-start;gap:11px;
+  padding:11px 14px 11px 12px;border-top:1px solid var(--line);cursor:pointer;
+  transition:background .12s;
 }
 .row:first-child{border-top:0}
 .row::before{content:"";position:absolute;inset-block:0;inset-inline-start:0;width:3px;background:var(--gc)}
 .row:hover,.row.open{background:var(--hover)}
 
-.rtitle{flex:1;min-width:0;display:flex;align-items:baseline;gap:8px}
-.rtitle .addr{font-weight:600;font-size:15px;letter-spacing:-.005em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rtitle .city{font-size:11.5px;color:var(--muted);white-space:nowrap;flex:none}
+/* עיגול הסימון — יעד מגע אמיתי, בתחילת השורה */
+.st{
+  flex:none;margin-top:1px;width:26px;height:26px;padding:0;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:2px solid var(--line-strong);background:transparent;color:transparent;
+  border-radius:50%;cursor:pointer;font-size:14px;font-weight:700;line-height:1;
+  transition:border-color .15s,background .15s,color .15s,transform .12s;
+}
+.st::after{
+  content:"";position:absolute;inset-block:2px;inset-inline-start:2px;width:44px;
+}
+.st:hover{border-color:var(--accent)}
+.st:active{transform:scale(.9)}
+.st.working{border-color:#fdab3d;background:#fdab3d;color:#1d2129}
+.st.done{border-color:#00c875;background:#00c875;color:#0d2b1c}
+.st.saving{opacity:.5;cursor:progress}
+
+.rmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.rline{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.addr{
+  font-weight:600;font-size:15.5px;letter-spacing:-.005em;color:var(--ink);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;
+}
+.city{font-size:11.5px;color:var(--muted);white-space:nowrap;flex:none}
 .chip{
-  flex:none;order:1;font-size:11.5px;font-weight:600;padding:2.5px 10px;border-radius:5px;
-  background:var(--line);color:var(--ink-2);white-space:nowrap;line-height:1.5;
+  flex:none;font-size:11px;font-weight:600;padding:2px 9px;border-radius:5px;
+  background:var(--line);color:var(--ink-2);white-space:nowrap;line-height:1.55;
 }
 .date{
-  flex:none;order:2;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;
-  white-space:nowrap;min-width:44px;text-align:end;
+  flex:none;margin-inline-start:auto;font-size:11.5px;font-weight:700;
+  font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted);
 }
-.date.late{color:var(--signal);font-weight:700}
-.date.today{color:var(--ok);font-weight:600}
-.caret{flex:none;color:var(--line-strong);font-size:10px;width:11px;text-align:center;transition:color .12s}
-.row:hover .caret{color:var(--muted)}
-.row.open .caret{color:var(--accent)}
-.brk,.rprev{display:none}
+.date.late{color:var(--signal)}
+.rprev{
+  font-size:12.5px;line-height:1.45;color:var(--muted);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.row.open .rprev{display:none}
+.caret,.brk{display:none}
 
-.st{
-  flex:none;order:3;display:inline-flex;align-items:center;gap:5px;
-  border:1px solid var(--line-strong);background:var(--surface);color:var(--muted);
-  border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:600;cursor:pointer;
-  white-space:nowrap;line-height:1.5;transition:border-color .15s,color .15s,transform .12s;
-}
-.st:hover{border-color:var(--accent);color:var(--accent)}
-.st:active{transform:scale(.95)}
-.st .mark{font-size:10px}
-.st.working{background:#fdab3d;border-color:#fdab3d;color:#1d2129}
-.st.done{background:#00c875;border-color:#00c875;color:#10241a}
-.st.saving{opacity:.55;cursor:progress}
-
-/* בלי ריחוף (נייד) — התיאור נקרא בשורה עצמה */
-@media (hover:none), (pointer:coarse), (max-width:700px){
-  .brk{display:block;order:4;flex:0 0 100%;height:0;margin:0}
-  .rprev{
-    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
-    order:5;flex:1 1 100%;min-width:0;overflow:hidden;
-    font-size:12.5px;line-height:1.45;color:var(--muted);
-  }
-  .row.open .rprev,.row.open .brk{display:none}
-}
 @media (hover:hover) and (pointer:fine) and (min-width:701px){
   .row:hover:not(.open) .pop{visibility:visible}
+  .rprev{display:none}
 }
 .pop{
-  position:absolute;top:calc(100% - 2px);inset-inline:10px;z-index:30;
+  position:absolute;top:calc(100% - 2px);inset-inline:12px;z-index:30;
   background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r);
   box-shadow:var(--shadow-2);padding:11px 14px;font-size:13.5px;line-height:1.5;color:var(--ink-2);
   white-space:pre-wrap;overflow:hidden;text-align:right;
@@ -277,7 +276,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   visibility:hidden;pointer-events:none;
 }
 
-.detail{display:none;padding:0 24px 15px;background:var(--hover);border-top:1px solid var(--line)}
+.detail{display:none;padding:0 24px 15px 46px;background:var(--hover);border-top:1px solid var(--line)}
 .row.open + .detail{display:block}
 .detail .task-desc{margin:12px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink);font-size:14.5px}
 .detail .bgsec{margin-top:14px}
@@ -285,7 +284,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .detail .bgsec p{
   margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13.5px;line-height:1.6;color:var(--ink-2);
   background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;
-  max-height:300px;overflow-y:auto;
+  max-height:280px;overflow-y:auto;
 }
 .detail .bgsec a{color:var(--accent);font-weight:600;text-decoration:none;border-bottom:1px solid currentColor}
 
@@ -314,6 +313,28 @@ button,input,select,textarea{font:inherit;color:inherit}
 .stpop .foot2{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
 .stpop .clear{background:none;border:0;color:var(--signal);font-size:12.5px;font-weight:600;cursor:pointer;padding:5px}
 .stpop .close{background:none;border:0;color:var(--muted);font-size:12.5px;font-weight:600;cursor:pointer;padding:5px}
+
+@media (max-width:700px){
+  .stpop, .stpop.up{
+    position:fixed;inset-inline:0;bottom:0;top:auto;width:auto;
+    border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+    box-shadow:0 -10px 34px rgba(0,0,0,.28);
+    animation:sheet .22s cubic-bezier(.2,.7,.3,1);
+  }
+  .stpop h5{font-size:14px;color:var(--ink)}
+  .stpop .picks button{padding:16px 8px;font-size:15.5px;border-radius:12px}
+  .stpop textarea{min-height:64px;font-size:15px}
+  .stpop .clear,.stpop .close{padding:9px 6px;font-size:13.5px}
+}
+@keyframes sheet{from{transform:translateY(100%)}to{transform:none}}
+.sheetbg{
+  position:fixed;inset:0;z-index:55;background:rgba(12,18,28,.42);
+  animation:fade .2s;
+}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+
+.filters{display:flex;gap:6px;overflow-x:auto;padding:8px 2px 2px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
 
 .toast{
   position:fixed;inset-inline:0;bottom:calc(20px + env(safe-area-inset-bottom));
@@ -406,6 +427,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   <div class="sticky">
     <input class="search" id="search" type="search" placeholder="חיפוש בכתובת, במשימה או ברקע…" aria-label="חיפוש">
     <div class="bar" id="adminbar" hidden></div>
+    <div class="filters" id="filters" hidden></div>
     <div class="opts">
       <span class="seglabel">מיון</span>
       <div class="seg" role="group" aria-label="מיון">
@@ -494,6 +516,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   /* ---------- מצב ---------- */
   var session = null, active = null, query = "", showFuture = false, sortMode = "board";
   var autoResumed = false;
+  var statusFilter = "all";
   var marks = {};        // taskId -> {status, note, byName, at}
   var statusOn = false;  // נדלק רק כשצד השרת עונה — עד אז אין כפתורי סימון
   var view  = "tasks";
@@ -643,6 +666,8 @@ button,input,select,textarea{font:inherit;color:inherit}
   function closePop(){
     var open_ = document.querySelector(".stpop");
     if (open_) open_.remove();
+    var bg = document.querySelector(".sheetbg");
+    if (bg) bg.remove();
   }
   document.addEventListener("click", function(e){
     if (!e.target.closest(".stpop") && !e.target.closest(".st")) closePop();
@@ -677,6 +702,12 @@ button,input,select,textarea{font:inherit;color:inherit}
     if (cl) cl.addEventListener("click", function(){ closePop(); setStatus(t.id, null, "", t.addr, btn); });
     pop.querySelector(".close").addEventListener("click", closePop);
 
+    if (window.matchMedia("(max-width:700px)").matches){
+      var bg = document.createElement("div");
+      bg.className = "sheetbg";
+      bg.addEventListener("click", closePop);
+      document.body.appendChild(bg);
+    }
     row.appendChild(pop);
     // אם אין מקום למטה, נפתח כלפי מעלה; ואם השורה מתחת לסרגל הדביק — מגלגלים אליה
     var pr = pop.getBoundingClientRect();
@@ -757,6 +788,37 @@ button,input,select,textarea{font:inherit;color:inherit}
     if (view === "updates") renderUpdates(); else render();
   }
 
+  function passesFilter(t){
+    if (statusFilter === "all") return true;
+    var m = marks[t.id];
+    if (statusFilter === "open")    return !m;
+    if (statusFilter === "working") return !!m && m.status === "בטיפול";
+    if (statusFilter === "done")    return !!m && m.status === "בוצע";
+    return true;
+  }
+
+  function buildFilters(all){
+    var box = $("filters");
+    if (!statusOn){ box.hidden = true; box.innerHTML = ""; return; }
+    var counts = {
+      all: all.length,
+      open: all.filter(function(t){ return !marks[t.id]; }).length,
+      working: all.filter(function(t){ return marks[t.id] && marks[t.id].status === "בטיפול"; }).length,
+      done: all.filter(function(t){ return marks[t.id] && marks[t.id].status === "בוצע"; }).length,
+    };
+    if (!counts.working && !counts.done && statusFilter === "all"){ box.hidden = true; box.innerHTML = ""; return; }
+    box.hidden = false;
+    box.innerHTML = "";
+    [["all","הכל"],["open","פתוחות"],["working","בטיפול"],["done","בוצעו"]].forEach(function(f){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "pill";
+      b.setAttribute("aria-pressed", String(statusFilter === f[0]));
+      b.innerHTML = f[1] + ' <span class="n">' + counts[f[0]] + "</span>";
+      b.addEventListener("click", function(){ statusFilter = f[0]; renderAll(); });
+      box.appendChild(b);
+    });
+  }
+
   function matches(t){
     if (!query) return true;
     return (t.name + " " + (t.desc || "") + " " + (t.notes || "") + " " + (t.pstatus || "") + " " + (t.type || ""))
@@ -764,7 +826,9 @@ button,input,select,textarea{font:inherit;color:inherit}
   }
 
   function render(){
-    var tasks = ((session.sets[active] || {}).tasks || []).filter(function(t){ return visible(t) && matches(t); });
+    var pool  = ((session.sets[active] || {}).tasks || []).filter(function(t){ return visible(t) && matches(t); });
+    buildFilters(pool);
+    var tasks = pool.filter(passesFilter);
 
     $("content").hidden = false;
     $("updatesView").hidden = true;
@@ -791,22 +855,20 @@ button,input,select,textarea{font:inherit;color:inherit}
       }
     }
 
-    var late = tasks.filter(function(t){ return t.date && delta(t.date) < -1; }).length;
-    var now  = tasks.filter(function(t){ return t.date && delta(t.date) >= -1 && delta(t.date) <= 0; }).length;
-    var done = tasks.filter(function(t){ return marks[t.id] && marks[t.id].status === "בוצע"; }).length;
-    var busy = tasks.filter(function(t){ return marks[t.id] && marks[t.id].status === "בטיפול"; }).length;
+    var late = pool.filter(function(t){ return t.date && delta(t.date) < -1; }).length;
+    var done = pool.filter(function(t){ return marks[t.id] && marks[t.id].status === "בוצע"; }).length;
+    var busy = pool.filter(function(t){ return marks[t.id] && marks[t.id].status === "בטיפול"; }).length;
 
     $("eyebrow").textContent = new Intl.DateTimeFormat("he-IL", {
       timeZone:"Asia/Jerusalem", weekday:"long", day:"numeric", month:"long" }).format(new Date());
 
-    var chips = '<span class="stat">משימות <b>' + tasks.length + "</b></span>";
-    if (now)  chips += '<span class="stat">להיום <b>' + now + "</b></span>";
+    var chips = '<span class="stat">משימות <b>' + pool.length + "</b></span>";
     if (late) chips += '<span class="stat late">באיחור <b>' + late + "</b></span>";
     if (busy) chips += '<span class="stat">בטיפול <b>' + busy + "</b></span>";
     if (done) chips += '<span class="stat done">בוצעו <b>' + done + "</b></span>";
     $("stats").innerHTML = chips;
     $("synced").textContent = "עודכן מהלוח: " + DATA.syncedAt;
-    drawRing(done, tasks.length);
+    drawRing(done, pool.length);
 
     var box = $("content");
     box.innerHTML = "";
@@ -898,7 +960,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 
   function drawRing(done, total){
     var el = $("ring");
-    if (!statusOn || !total){ el.hidden = true; return; }
+    if (!statusOn || !total || !done){ el.hidden = true; return; }
     el.hidden = false;
     var pct = Math.round((done / total) * 100), R = 24, C = 2 * Math.PI * R;
     el.innerHTML =
@@ -913,13 +975,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   }
 
   function addRow(container, t){
-    var dCls = "", dTxt = "";
-    if (t.date){
-      var d = delta(t.date);
-      if (d < -1)      { dCls = "late";  dTxt = short(t.date); }
-      else if (d <= 0) { dCls = "today"; dTxt = "היום"; }
-      else             { dTxt = short(t.date); }
-    }
+    var mk = marks[t.id];
     var has = !!(t.desc || t.notes || t.pstatus);
 
     var row = document.createElement("div");
@@ -928,6 +984,29 @@ button,input,select,textarea{font:inherit;color:inherit}
     row.setAttribute("role", "button");
     row.setAttribute("aria-expanded", "false");
 
+    // עיגול הסימון — הפעולה העיקרית, יעד מגע מלא
+    var stb = document.createElement("button");
+    stb.type = "button";
+    stb.className = "st" + (mk ? (mk.status === "בוצע" ? " done" : " working") : "");
+    stb.textContent = mk ? (mk.status === "בוצע" ? "✓" : "●") : "";
+    stb.setAttribute("aria-label", mk ? "הסטטוס: " + mk.status : "סימון המשימה");
+    stb.title = mk ? mk.status : "סימון כבטיפול או כבוצע";
+    if (statusOn){
+      stb.addEventListener("click", function(e){ e.stopPropagation(); openPicker(row, t, stb); });
+      row.appendChild(stb);
+    }
+
+    var main = document.createElement("div");
+    main.className = "rmain";
+
+    // התאריך מוצג רק כשהוא לא היום — אחרת הוא רעש שחוזר בכל שורה
+    var dTxt = "", dCls = "";
+    if (t.date){
+      var d = delta(t.date);
+      if (d < -1){ dCls = "late"; dTxt = "באיחור " + Math.abs(d) + " ימים"; }
+      else if (d > 0){ dTxt = short(t.date); }
+    }
+
     var chip = "";
     if (t.type){
       var c = DATA.types[t.type];
@@ -935,29 +1014,21 @@ button,input,select,textarea{font:inherit;color:inherit}
                : '<span class="chip">' + esc(t.type) + "</span>";
     }
 
-    row.innerHTML =
-      '<span class="caret">' + (has ? "▸" : "") + "</span>" +
-      '<span class="rtitle"><span class="addr">' + esc(t.addr) + "</span>" +
-        (t.city ? '<span class="city">' + esc(t.city) + "</span>" : "") + "</span>" +
-      chip +
-      '<span class="date ' + dCls + '">' + esc(dTxt) + "</span>" +
-      '<span class="brk"></span>' +
-      (t.desc ? '<span class="rprev">' + esc(oneLine(t.desc)) + "</span>" : "") +
-      (t.desc ? '<div class="pop">' + esc(t.desc) + "</div>" : "");
+    main.innerHTML =
+      '<div class="rline">' +
+        '<span class="addr">' + esc(t.addr) + "</span>" +
+        (t.city ? '<span class="city">' + esc(t.city) + "</span>" : "") +
+        chip +
+        (dTxt ? '<span class="date ' + dCls + '">' + esc(dTxt) + "</span>" : "") +
+      "</div>" +
+      (t.desc ? '<div class="rprev">' + esc(oneLine(t.desc)) + "</div>" : "");
+    row.appendChild(main);
 
-    var mk  = marks[t.id];
-    if (statusOn){
-    var stb = document.createElement("button");
-    stb.type = "button";
-    stb.className = "st" + (mk ? (mk.status === "בוצע" ? " done" : " working") : "");
-    stb.innerHTML = mk ? '<span class="mark">' + (mk.status === "בוצע" ? "✓" : "●") + "</span>" + esc(mk.status)
-                       : '<span class="mark">○</span>סמן';
-    stb.title = mk ? "שינוי הסטטוס" : "סימון כבטיפול או כבוצע";
-    stb.addEventListener("click", function(e){
-      e.stopPropagation();
-      openPicker(row, t, stb);
-    });
-    row.appendChild(stb);
+    if (t.desc) {
+      var pop = document.createElement("div");
+      pop.className = "pop";
+      pop.textContent = t.desc;
+      row.appendChild(pop);
     }
 
     var detail = document.createElement("div");
@@ -971,11 +1042,9 @@ button,input,select,textarea{font:inherit;color:inherit}
       if (!has) return;
       var open = row.classList.toggle("open");
       row.setAttribute("aria-expanded", String(open));
-      row.querySelector(".caret").textContent = open ? "▾" : "▸";
     }
     row.addEventListener("click", toggle);
     row.addEventListener("keydown", function(e){
-      // רק כשהמיקוד על השורה עצמה. אחרת רווח בשדה ההערה שיושב בתוכה נבלע כאן.
       if (e.target !== row) return;
       if (e.key === "Enter" || e.key === " "){ e.preventDefault(); toggle(); }
     });
@@ -1009,7 +1078,8 @@ button,input,select,textarea{font:inherit;color:inherit}
     $("adminbar").innerHTML = ""; $("adminbar").hidden = true;
     $("futureWrap").hidden = true; $("future").checked = false; showFuture = false;
     $("toUpdates").hidden = true; $("toTasks").hidden = true;
-    $("search").value = ""; query = "";
+    $("search").value = ""; query = ""; statusFilter = "all";
+    $("filters").innerHTML = ""; $("filters").hidden = true;
     $("content").innerHTML = ""; $("updatesView").innerHTML = "";
     $("stats").innerHTML = ""; $("ring").hidden = true;
     try { localStorage.removeItem(MARKS_CACHE); } catch (_){}
