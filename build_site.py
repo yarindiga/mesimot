@@ -211,11 +211,13 @@ def push_env(key, value):
         return
 
     base = "https://api.netlify.com/api/v1/accounts/digayarin/env"
-    body = json.dumps([{"key": key, "values": [{"context": "all", "value": value}]}]).encode()
     hdrs = {"Authorization": "Bearer " + tok, "Content-Type": "application/json"}
-    for method, url in (("PUT", "%s/%s?site_id=%s" % (base, key, site)),
-                        ("POST", "%s?site_id=%s" % (base, site))):
-        payload = json.dumps({"context": "all", "value": value}).encode() if method == "PUT" else body
+    body = json.dumps({"key": key, "values": [{"context": "all", "value": value}]}).encode()
+    last = ""
+    # PUT מעדכן משתנה קיים, POST יוצר חדש — מנסים לפי הסדר הזה
+    for method, url in (("PUT",  "%s/%s?site_id=%s" % (base, key, site)),
+                        ("POST", "%s?site_id=%s"    % (base, site))):
+        payload = body if method == "PUT" else json.dumps([json.loads(body)]).encode()
         try:
             req = urllib.request.Request(url, data=payload, method=method, headers=hdrs)
             urllib.request.urlopen(req, timeout=45).read()
