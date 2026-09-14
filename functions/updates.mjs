@@ -1,6 +1,9 @@
 // עדכוני סטטוס של משימות. נשמר כאן בלבד — לעולם לא נכתב חזרה למאנדיי.
 import { getStore } from "@netlify/blobs";
-import { USERS, OWNERS } from "../shared/_data.mjs";
+import { OWNERS } from "../shared/_owners.mjs";
+
+// טבלת המשתמשים מגיעה ממשתנה סביבה, לא מהקוד — כדי שהמאגר לא יכיל סודות.
+const USERS = JSON.parse(process.env.APP_USERS || "{}");
 
 const ALLOWED = new Set(["בטיפול", "בוצע"]);
 const json = (obj, status = 200) =>

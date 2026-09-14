@@ -219,16 +219,8 @@ button,input,select{font:inherit;color:inherit}
 .st.working{background:#fdab3d;border-color:#fdab3d;color:#1d2129}
 .st.done{background:#00c875;border-color:#00c875;color:#1d2129}
 .st.saving{opacity:.55;cursor:progress}
-/* מעמעמים את תוכן השורה בלבד. עמעום השורה עצמה יוצר הקשר ערימה
-   שכולא את חלונית הבחירה ומשבש את השכבות. */
-.row.isdone > .caret,
-.row.isdone > .rtitle,
-.row.isdone > .date,
-.row.isdone > .rprev{opacity:.45}
-.row.isdone:hover > .caret,
-.row.isdone:hover > .rtitle,
-.row.isdone:hover > .date,
-.row.isdone:hover > .rprev{opacity:.8}
+/* "בוצע" נראה בדיוק כמו "בטיפול" — הפיל הירוק הוא הסימון היחיד.
+   כל עמעום על השורה יוצר הקשר ערימה שמשבש את חלונית הבחירה. */
 
 .stpop.up{top:auto;bottom:calc(100% - 2px)}
 .stpop{
@@ -820,7 +812,6 @@ button,input,select{font:inherit;color:inherit}
       openPicker(row, t, stb);
     });
     row.appendChild(stb);
-    if (mk && mk.status === "בוצע") row.classList.add("isdone");
     }
 
     var detail = document.createElement("div");

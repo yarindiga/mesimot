@@ -9,7 +9,7 @@
 הפעלה:  python3 build_site.py
 """
 
-import json, os, re, secrets, sys, urllib.request, datetime
+import json, os, re, secrets, sys, urllib.error, urllib.request, datetime
 from zoneinfo import ZoneInfo
 from base64 import b64decode, b64encode
 from hashlib import pbkdf2_hmac, sha256
@@ -171,13 +171,15 @@ def seal(key_bytes, plaintext):
 
 
 def write_function_data(users, owners, store, by_owner):
-    """טבלאות ההרשאה של הפונקציה. יושב מחוץ ל-functions/ כדי ש-Netlify
-    לא תפרוס אותו כנקודת קצה בפני עצמה."""
+    """מפצל בין שני סוגי מידע:
+    - מיפוי משימה→בעלים נכתב ל-shared/_owners.mjs ונכנס למאגר. אין בו סודות,
+      רק מזהי משימות ומזהים אטומים.
+    - אסימוני הכתיבה נדחפים למשתנה הסביבה APP_USERS ב-Netlify ולעולם לא נכנסים לקוד.
+    """
     who_by_token = {}
     for owner in owners:
         u  = next((x for x in users if x["email"] == owner), None)
-        wt = store["writeTokens"][owner]
-        who_by_token[wt] = {
+        who_by_token[store["writeTokens"][owner]] = {
             "id":    store["blobIds"][owner],
             "name":  u["name"] if u else "ללא שיוך",
             "admin": bool(u.get("admin")) if u else False,
@@ -185,13 +187,43 @@ def write_function_data(users, owners, store, by_owner):
     task_owner = {t["id"]: store["blobIds"][owner]
                   for owner in owners for t in by_owner[owner]}
 
-    fdir = os.path.join(HERE, "shared")
-    os.makedirs(fdir, exist_ok=True)
-    with open(os.path.join(fdir, "_data.mjs"), "w", encoding="utf-8") as f:
-        f.write("// נוצר אוטומטית על ידי build_site.py — אין לערוך ואין להעלות ל-git.\n")
-        f.write("export const USERS = %s;\n"  % json.dumps(who_by_token, ensure_ascii=False, indent=2))
+    sdir = os.path.join(HERE, "shared")
+    os.makedirs(sdir, exist_ok=True)
+    with open(os.path.join(sdir, "_owners.mjs"), "w", encoding="utf-8") as f:
+        f.write("// נוצר אוטומטית על ידי build_site.py. אין כאן סודות.\n")
         f.write("export const OWNERS = %s;\n" % json.dumps(task_owner, ensure_ascii=False))
-    os.chmod(os.path.join(fdir, "_data.mjs"), 0o600)
+
+    push_env("APP_USERS", json.dumps(who_by_token, ensure_ascii=False, separators=(",", ":")))
+
+
+def push_env(key, value):
+    """מעדכן משתנה סביבה ב-Netlify. הערך לא נשמר בשום קובץ שנכנס למאגר."""
+    cfg = {}
+    for path in (os.path.join(HERE, ".env"),):
+        if os.path.exists(path):
+            for line in open(path, encoding="utf-8"):
+                if "=" in line and not line.strip().startswith("#"):
+                    k, v = line.split("=", 1)
+                    cfg[k.strip()] = v.strip()
+    tok, site = cfg.get("NETLIFY_TOKEN"), cfg.get("NETLIFY_SITE_ID")
+    if not tok or not site:
+        print("  דילוג על APP_USERS — חסרים NETLIFY_TOKEN/NETLIFY_SITE_ID")
+        return
+
+    base = "https://api.netlify.com/api/v1/accounts/digayarin/env"
+    body = json.dumps([{"key": key, "values": [{"context": "all", "value": value}]}]).encode()
+    hdrs = {"Authorization": "Bearer " + tok, "Content-Type": "application/json"}
+    for method, url in (("PUT", "%s/%s?site_id=%s" % (base, key, site)),
+                        ("POST", "%s?site_id=%s" % (base, site))):
+        payload = json.dumps({"context": "all", "value": value}).encode() if method == "PUT" else body
+        try:
+            req = urllib.request.Request(url, data=payload, method=method, headers=hdrs)
+            urllib.request.urlopen(req, timeout=45).read()
+            print("  APP_USERS עודכן ב-Netlify (%d משתמשים)" % len(json.loads(value)))
+            return
+        except urllib.error.HTTPError as e:
+            last = "%s %s" % (e.code, e.read().decode("utf-8", "replace")[:120])
+    print("  אזהרה: APP_USERS לא עודכן —", last)
 
 
 def main():
