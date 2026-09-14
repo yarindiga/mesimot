@@ -1,6 +1,6 @@
 // עדכוני סטטוס של משימות. נשמר כאן בלבד — לעולם לא נכתב חזרה למאנדיי.
 import { getStore } from "@netlify/blobs";
-import { USERS, OWNERS } from "./_data.mjs";
+import { USERS, OWNERS } from "../shared/_data.mjs";
 
 const ALLOWED = new Set(["בטיפול", "בוצע"]);
 const json = (obj, status = 200) =>

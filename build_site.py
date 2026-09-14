@@ -171,7 +171,8 @@ def seal(key_bytes, plaintext):
 
 
 def write_function_data(users, owners, store, by_owner):
-    """טבלאות ההרשאה של הפונקציה בצד השרת. לא נפרס ללקוח ולא נכנס ל-git."""
+    """טבלאות ההרשאה של הפונקציה. יושב מחוץ ל-functions/ כדי ש-Netlify
+    לא תפרוס אותו כנקודת קצה בפני עצמה."""
     who_by_token = {}
     for owner in owners:
         u  = next((x for x in users if x["email"] == owner), None)
@@ -184,7 +185,7 @@ def write_function_data(users, owners, store, by_owner):
     task_owner = {t["id"]: store["blobIds"][owner]
                   for owner in owners for t in by_owner[owner]}
 
-    fdir = os.path.join(HERE, "functions")
+    fdir = os.path.join(HERE, "shared")
     os.makedirs(fdir, exist_ok=True)
     with open(os.path.join(fdir, "_data.mjs"), "w", encoding="utf-8") as f:
         f.write("// נוצר אוטומטית על ידי build_site.py — אין לערוך ואין להעלות ל-git.\n")
