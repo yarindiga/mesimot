@@ -391,6 +391,7 @@ button,input,select{font:inherit;color:inherit}
   /* ---------- מצב ---------- */
   var session = null, active = null, query = "", showFuture = false, sortMode = "board";
   var marks = {};        // taskId -> {status, note, byName, at}
+  var statusOn = false;  // נדלק רק כשצד השרת עונה — עד אז אין כפתורי סימון
   var view  = "tasks";
   var API   = "/api/updates";
   var MARKS_CACHE = "tb.marks";
@@ -500,10 +501,12 @@ button,input,select{font:inherit;color:inherit}
       var d = await r.json();
       marks = {};
       (d.updates || []).forEach(function(u){ marks[u.taskId] = u; });
+      statusOn = true;
       cacheMarks();
       renderAll();
     } catch (err){
-      // נשארים עם מה שנשמר מקומית — הרשימה עדיין קריאה
+      statusOn = false;   // אין צד שרת — מסתירים את הסימונים במקום להציג כפתור שנכשל
+      renderAll();
     }
   }
 
@@ -618,7 +621,7 @@ button,input,select{font:inherit;color:inherit}
     if (!session) return;
     var n = Object.keys(marks).length;
     $("uBadge").textContent = n;
-    $("toUpdates").hidden = !(session.isAdmin && view === "tasks");
+    $("toUpdates").hidden = !(session.isAdmin && statusOn && view === "tasks");
     $("toTasks").hidden   = (view !== "updates");
     if (view === "updates") renderUpdates(); else render();
   }
@@ -773,6 +776,7 @@ button,input,select{font:inherit;color:inherit}
       (t.desc ? '<div class="pop">' + esc(t.desc) + "</div>" : "");
 
     var mk  = marks[t.id];
+    if (statusOn){
     var stb = document.createElement("button");
     stb.type = "button";
     stb.className = "st" + (mk ? (mk.status === "בוצע" ? " done" : " working") : "");
@@ -785,6 +789,7 @@ button,input,select{font:inherit;color:inherit}
     });
     row.appendChild(stb);
     if (mk && mk.status === "בוצע") row.classList.add("isdone");
+    }
 
     var detail = document.createElement("div");
     detail.className = "detail";
