@@ -176,6 +176,16 @@ button,input,select,textarea{font:inherit;color:inherit}
 .toggle input{accent-color:var(--accent);width:15px;height:15px}
 .statusline{display:none}
 
+.resumed{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;
+  background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r);
+  padding:10px 14px;font-size:13.5px;color:var(--ink-2);box-shadow:var(--shadow-1);
+}
+.resumed b{color:var(--ink)}
+.resumed button{
+  margin-inline-start:auto;background:var(--accent);color:var(--on-accent);border:0;
+  border-radius:999px;padding:5px 14px;font-size:12.5px;font-weight:700;cursor:pointer;
+}
 .viewing{
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;
   background:var(--accent-soft);border:1px solid transparent;border-radius:var(--r);
@@ -390,6 +400,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     <p class="synced" id="synced"></p>
   </section>
 
+  <div class="resumed" id="resumed" hidden></div>
   <div class="viewing" id="viewing" hidden></div>
 
   <div class="sticky">
@@ -482,6 +493,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 
   /* ---------- מצב ---------- */
   var session = null, active = null, query = "", showFuture = false, sortMode = "board";
+  var autoResumed = false;
   var marks = {};        // taskId -> {status, note, byName, at}
   var statusOn = false;  // נדלק רק כשצד השרת עונה — עד אז אין כפתורי סימון
   var view  = "tasks";
@@ -518,6 +530,7 @@ button,input,select,textarea{font:inherit;color:inherit}
       }
       if (!raws.length) throw new Error("no keys");
 
+      autoResumed = false;
       await start(raws);
       if (remember) remember_(raws); else forget();
     } catch (err){
@@ -699,6 +712,24 @@ button,input,select,textarea{font:inherit;color:inherit}
       });
       $("futureWrap").hidden = false;
     }
+    var rb = $("resumed");
+    if (autoResumed){
+      rb.hidden = false;
+      rb.innerHTML = "";
+      rb.appendChild(document.createTextNode("נכנסת אוטומטית כ־"));
+      var b = document.createElement("b");
+      b.textContent = labelOf(session.meId);
+      rb.appendChild(b);
+      rb.appendChild(document.createTextNode(". לא אתה?"));
+      var sw = document.createElement("button");
+      sw.type = "button";
+      sw.textContent = "החלפת משתמש";
+      sw.addEventListener("click", function(){ $("logout").click(); });
+      rb.appendChild(sw);
+    } else {
+      rb.hidden = true;
+    }
+
     loadCachedMarks();
     renderAll();
     pullMarks();
@@ -962,7 +993,8 @@ button,input,select,textarea{font:inherit;color:inherit}
   $("toUpdates").addEventListener("click", function(){ view = "updates"; renderAll(); });
   $("toTasks").addEventListener("click",   function(){ view = "tasks";   renderAll(); });
   $("logout").addEventListener("click", function(){
-    session = null; marks = {}; view = "tasks"; forget();
+    session = null; marks = {}; view = "tasks"; autoResumed = false; forget();
+    $("resumed").hidden = true;
     try { localStorage.removeItem(MARKS_CACHE); } catch (_){}
     $("app").hidden = true; $("gate").hidden = false;
     $("pass").value = ""; $("gateMsg").textContent = "";
