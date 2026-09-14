@@ -699,9 +699,17 @@ button,input,select,textarea{font:inherit;color:inherit}
     $("who").textContent = "מחובר: " + labelOf(session.meId);
     $("email").value = ""; $("pass").value = "";
 
+    // איפוס מלא של ממשק הניהול לפני כל כניסה — אחרת שאריות מסשן קודם
+    // באותו דפדפן נשארות על המסך אצל משתמש רגיל.
+    var bar = $("adminbar");
+    bar.innerHTML = "";
+    bar.hidden = true;
+    $("futureWrap").hidden = true;
+    $("future").checked = false;
+    showFuture = false;
+
     if (session.isAdmin){
-      var bar = $("adminbar");
-      bar.hidden = false; bar.innerHTML = "";
+      bar.hidden = false;
       session.order.forEach(function(em){
         var b = document.createElement("button");
         b.type = "button"; b.className = "pill";
@@ -967,6 +975,8 @@ button,input,select,textarea{font:inherit;color:inherit}
     }
     row.addEventListener("click", toggle);
     row.addEventListener("keydown", function(e){
+      // רק כשהמיקוד על השורה עצמה. אחרת רווח בשדה ההערה שיושב בתוכה נבלע כאן.
+      if (e.target !== row) return;
       if (e.key === "Enter" || e.key === " "){ e.preventDefault(); toggle(); }
     });
 
@@ -995,6 +1005,13 @@ button,input,select,textarea{font:inherit;color:inherit}
   $("logout").addEventListener("click", function(){
     session = null; marks = {}; view = "tasks"; autoResumed = false; forget();
     $("resumed").hidden = true;
+    $("viewing").hidden = true;
+    $("adminbar").innerHTML = ""; $("adminbar").hidden = true;
+    $("futureWrap").hidden = true; $("future").checked = false; showFuture = false;
+    $("toUpdates").hidden = true; $("toTasks").hidden = true;
+    $("search").value = ""; query = "";
+    $("content").innerHTML = ""; $("updatesView").innerHTML = "";
+    $("stats").innerHTML = ""; $("ring").hidden = true;
     try { localStorage.removeItem(MARKS_CACHE); } catch (_){}
     $("app").hidden = true; $("gate").hidden = false;
     $("pass").value = ""; $("gateMsg").textContent = "";
