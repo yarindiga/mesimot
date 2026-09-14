@@ -219,8 +219,16 @@ button,input,select{font:inherit;color:inherit}
 .st.working{background:#fdab3d;border-color:#fdab3d;color:#1d2129}
 .st.done{background:#00c875;border-color:#00c875;color:#1d2129}
 .st.saving{opacity:.55;cursor:progress}
-.row.isdone{opacity:.5}
-.row.isdone:hover{opacity:.85}
+/* מעמעמים את תוכן השורה בלבד. עמעום השורה עצמה יוצר הקשר ערימה
+   שכולא את חלונית הבחירה ומשבש את השכבות. */
+.row.isdone > .caret,
+.row.isdone > .rtitle,
+.row.isdone > .date,
+.row.isdone > .rprev{opacity:.45}
+.row.isdone:hover > .caret,
+.row.isdone:hover > .rtitle,
+.row.isdone:hover > .date,
+.row.isdone:hover > .rprev{opacity:.8}
 
 .stpop.up{top:auto;bottom:calc(100% - 2px)}
 .stpop{
