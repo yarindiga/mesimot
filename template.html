@@ -213,6 +213,7 @@ button,input,select{font:inherit;color:inherit}
 .row.isdone{opacity:.5}
 .row.isdone:hover{opacity:.85}
 
+.stpop.up{top:auto;bottom:calc(100% - 2px)}
 .stpop{
   position:absolute;top:calc(100% - 2px);inset-inline-end:8px;z-index:60;width:min(280px,88vw);
   background:var(--surface);border:1px solid var(--line-strong);border-radius:10px;
@@ -569,7 +570,14 @@ button,input,select{font:inherit;color:inherit}
     pop.querySelector(".close").addEventListener("click", closePop);
 
     row.appendChild(pop);
-    setTimeout(function(){ ta.focus(); }, 30);
+    // אם אין מקום למטה, נפתח כלפי מעלה; ואם השורה מתחת לסרגל הדביק — מגלגלים אליה
+    var pr = pop.getBoundingClientRect();
+    var topbar = document.querySelector(".topbar").getBoundingClientRect().bottom;
+    if (pr.bottom > window.innerHeight - 8 && row.getBoundingClientRect().top - pr.height > topbar + 8){
+      pop.classList.add("up");
+    } else if (pop.getBoundingClientRect().top < topbar + 8){
+      row.scrollIntoView({ block: "center" });
+    }
   }
 
   /* ---------- תצוגה ---------- */
