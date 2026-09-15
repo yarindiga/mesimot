@@ -149,8 +149,6 @@ button,input,select,textarea{font:inherit;color:inherit}
   background:var(--surface-2);border:1px solid var(--line);font-size:12.5px;color:var(--muted);
 }
 .stat b{font-size:14px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
-.stat.late{background:var(--signal-soft);border-color:transparent;color:var(--signal)}
-.stat.late b{color:var(--signal)}
 .stat.done{background:var(--ok-soft);border-color:transparent;color:var(--ok)}
 .stat.done b{color:var(--ok)}
 .synced{margin-top:11px;font-size:11.5px;color:var(--muted)}
@@ -265,7 +263,6 @@ button,input,select,textarea{font:inherit;color:inherit}
   flex:none;margin-inline-start:auto;font-size:11.5px;font-weight:700;
   font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted);
 }
-.date.late{color:var(--signal)}
 .rprev{
   font-size:12.5px;line-height:1.45;color:var(--muted);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
@@ -357,6 +354,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .toast.bad{background:var(--signal);color:#fff}
 
 /* ============ עדכונים ============ */
+.utools{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .ulist{display:flex;flex-direction:column;gap:8px}
 .uday{font-size:11.5px;font-weight:700;letter-spacing:.05em;color:var(--muted);margin:16px 2px 3px}
 .uitem{
@@ -533,6 +531,9 @@ button,input,select,textarea{font:inherit;color:inherit}
   var view  = "tasks";
   var API   = "/api/updates";
   var MARKS_CACHE = "tb.marks";
+  var clearedAt = 0;     // מנהל בלבד: חותם הזמן של "ניקוי" אחרון במסך העדכונים
+  var history = [];      // מנהל בלבד: כל העדכונים שנרשמו אי פעם, גם אחרי ניקוי
+  var updatesSub = "active"; // "active" | "history"
 
   /* ---------- כניסה ---------- */
   $("loginForm").addEventListener("submit", function(e){
@@ -640,6 +641,8 @@ button,input,select,textarea{font:inherit;color:inherit}
       var d = await r.json();
       marks = {};
       (d.updates || []).forEach(function(u){ marks[u.taskId] = u; });
+      clearedAt = d.clearedAt || 0;
+      history = d.history || [];
       statusOn = true;
       cacheMarks();
       renderAll();
@@ -792,7 +795,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 
   function renderAll(){
     if (!session) return;
-    var n = Object.keys(marks).length;
+    var n = Object.keys(marks).filter(function(k){ return (marks[k].at || 0) > clearedAt; }).length;
     $("uBadge").textContent = n;
     $("toUpdates").hidden = !(session.isAdmin && statusOn && view === "tasks");
     $("toTasks").hidden   = (view !== "updates");
@@ -866,7 +869,6 @@ button,input,select,textarea{font:inherit;color:inherit}
       }
     }
 
-    var late = pool.filter(function(t){ return t.date && delta(t.date) < -1; }).length;
     var done = pool.filter(function(t){ return marks[t.id] && marks[t.id].status === "בוצע"; }).length;
     var busy = pool.filter(function(t){ return marks[t.id] && marks[t.id].status === "בטיפול"; }).length;
 
@@ -874,7 +876,6 @@ button,input,select,textarea{font:inherit;color:inherit}
       timeZone:"Asia/Jerusalem", weekday:"long", day:"numeric", month:"long" }).format(new Date());
 
     var chips = '<span class="stat">משימות <b>' + pool.length + "</b></span>";
-    if (late) chips += '<span class="stat late">באיחור <b>' + late + "</b></span>";
     if (busy) chips += '<span class="stat">בטיפול <b>' + busy + "</b></span>";
     if (done) chips += '<span class="stat done">בוצעו <b>' + done + "</b></span>";
     $("stats").innerHTML = chips;
@@ -917,6 +918,23 @@ button,input,select,textarea{font:inherit;color:inherit}
     });
   }
 
+  async function clearUpdates(){
+    try {
+      var r = await fetch(API, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ t: myToken(), clear: true }),
+      });
+      if (!r.ok) throw new Error(r.status);
+      var d = await r.json();
+      clearedAt = d.clearedAt || Date.now();
+      toast("נוקה");
+      renderAll();
+    } catch (err){
+      toast("הניקוי נכשל. נסו שוב.", true);
+    }
+  }
+
   function dayLabel(ts){
     var f = new Intl.DateTimeFormat("he-IL", { timeZone:"Asia/Jerusalem", weekday:"long", day:"numeric", month:"numeric" });
     return f.format(new Date(ts));
@@ -926,7 +944,8 @@ button,input,select,textarea{font:inherit;color:inherit}
   }
 
   function renderUpdates(){
-    $("viewTitle").textContent = "עדכונים מהצוות";
+    var isHistory = updatesSub === "history";
+    $("viewTitle").textContent = isHistory ? "היסטוריית עדכונים" : "עדכונים מהצוות";
     $("viewing").hidden = true;
     $("statusline").innerHTML = "";
     $("content").hidden = true;
@@ -934,11 +953,36 @@ button,input,select,textarea{font:inherit;color:inherit}
     box.hidden = false;
     box.innerHTML = "";
 
-    var list = Object.keys(marks).map(function(k){ return marks[k]; })
-                     .sort(function(a, b){ return (b.at || 0) - (a.at || 0); });
+    var list = isHistory
+      ? history.slice()
+      : Object.keys(marks).map(function(k){ return marks[k]; }).filter(function(u){ return (u.at || 0) > clearedAt; });
+    list.sort(function(a, b){ return (b.at || 0) - (a.at || 0); });
+
+    if (session.isAdmin){
+      var tools = document.createElement("div");
+      tools.className = "utools";
+      var histBtn = document.createElement("button");
+      histBtn.type = "button"; histBtn.className = "linkbtn";
+      histBtn.textContent = isHistory ? "← לעדכונים" : "היסטוריה";
+      histBtn.addEventListener("click", function(){ updatesSub = isHistory ? "active" : "history"; renderAll(); });
+      tools.appendChild(histBtn);
+      if (!isHistory && list.length){
+        var clearBtn = document.createElement("button");
+        clearBtn.type = "button"; clearBtn.className = "linkbtn";
+        clearBtn.textContent = "ניקוי";
+        clearBtn.addEventListener("click", clearUpdates);
+        tools.appendChild(clearBtn);
+      }
+      box.appendChild(tools);
+    }
+
     if (!list.length){
-      box.innerHTML = '<div class="empty"><strong>אין עדכונים עדיין</strong>' +
-                      "כשמישהו יסמן משימה כבטיפול או כבוצע, היא תופיע כאן.</div>";
+      var empty = document.createElement("div");
+      empty.className = "empty";
+      empty.innerHTML = isHistory
+        ? "<strong>אין היסטוריה עדיין</strong>כאן יופיעו כל העדכונים שנרשמו אי פעם."
+        : "<strong>אין עדכונים חדשים</strong>כשמישהו יסמן משימה כבטיפול או כבוצע, היא תופיע כאן.";
+      box.appendChild(empty);
       return;
     }
 
@@ -1010,12 +1054,12 @@ button,input,select,textarea{font:inherit;color:inherit}
     var main = document.createElement("div");
     main.className = "rmain";
 
-    // התאריך מוצג רק כשהוא לא היום — אחרת הוא רעש שחוזר בכל שורה
-    var dTxt = "", dCls = "";
+    // תאריך שכבר עבר פשוט נהיה משימה של היום, בלי ציון פיגור — משימות מסוימות
+    // נמשכות זמן, וזה לא מידע שרלוונטי להציג בשורה. מוצג רק תאריך עתידי (תצוגת "כולל עתידיות").
+    var dTxt = "";
     if (t.date){
       var d = delta(t.date);
-      if (d < -1){ dCls = "late"; dTxt = "באיחור " + Math.abs(d) + " ימים"; }
-      else if (d > 0){ dTxt = short(t.date); }
+      if (d > 0) dTxt = short(t.date);
     }
 
     var chip = "";
@@ -1030,7 +1074,7 @@ button,input,select,textarea{font:inherit;color:inherit}
         '<span class="addr">' + esc(t.addr) + "</span>" +
         (t.city ? '<span class="city">' + esc(t.city) + "</span>" : "") +
         chip +
-        (dTxt ? '<span class="date ' + dCls + '">' + esc(dTxt) + "</span>" : "") +
+        (dTxt ? '<span class="date">' + esc(dTxt) + "</span>" : "") +
       "</div>" +
       (t.desc ? '<div class="rprev">' + esc(oneLine(t.desc)) + "</div>" : "");
     row.appendChild(main);
@@ -1084,6 +1128,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   $("toTasks").addEventListener("click",   function(){ view = "tasks";   renderAll(); });
   $("logout").addEventListener("click", function(){
     session = null; marks = {}; view = "tasks"; autoResumed = false; forget();
+    clearedAt = 0; history = []; updatesSub = "active";
     $("resumed").hidden = true;
     $("viewing").hidden = true;
     $("adminbar").innerHTML = ""; $("adminbar").hidden = true;

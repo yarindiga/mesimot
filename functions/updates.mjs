@@ -80,19 +80,44 @@ export default async (req) => {
 
     const { blobs } = await store.list();
     const updates = [];
+    let clearedAt = 0, history = [];
     for (const b of blobs) {
+      if (b.key === "_clearedAt") {
+        const rec = await store.get(b.key, { type: "json" });
+        clearedAt = (rec && rec.at) || 0;
+        continue;
+      }
+      if (b.key === "_log") {
+        if (who.admin) history = (await store.get(b.key, { type: "json" })) || [];
+        continue;
+      }
       const rec = await store.get(b.key, { type: "json" });
       if (!rec) continue;
       if (who.admin || rec.byId === who.id) updates.push({ taskId: b.key, ...rec });
     }
     updates.sort((a, b) => (b.at || 0) - (a.at || 0));
-    return json({ updates });
+    const resp = { updates };
+    // רק המנהל צריך את היסטוריית-הכול ואת חותם הניקוי — לצוות מספיק המצב הנוכחי.
+    if (who.admin) {
+      resp.clearedAt = clearedAt;
+      resp.history = history.slice().sort((a, b) => (b.at || 0) - (a.at || 0));
+    }
+    return json(resp);
   }
 
   if (req.method === "POST") {
     const body = await req.json().catch(() => ({}));
     const who = USERS[body.t || ""];
     if (!who) return json({ error: "unauthorized" }, 401);
+
+    // "ניקוי" מסך העדכונים אצל המנהל — לא נוגע בסטטוס האמיתי של אף משימה,
+    // רק מסמן חותם זמן שממנו מציגים "עדכונים" כברירת מחדל. ההיסטוריה המלאה נשארת.
+    if (body.clear === true) {
+      if (!who.admin) return json({ error: "forbidden" }, 403);
+      const at = Date.now();
+      await store.setJSON("_clearedAt", { at });
+      return json({ ok: true, clearedAt: at });
+    }
 
     const taskId = String(body.taskId || "");
     if (!/^[0-9]{1,20}$/.test(taskId)) return json({ error: "bad_task" }, 400);
@@ -130,6 +155,15 @@ export default async (req) => {
     }
 
     await store.setJSON(taskId, rec);
+
+    // לוג היסטוריה שלא נדרס — נשמר גם אחרי "ניקוי" המסך, וגם אחרי שהמשימה מתעדכנת שוב.
+    try {
+      const log = (await store.get("_log", { type: "json" })) || [];
+      log.push({ taskId, ...rec });
+      if (log.length > 2000) log.splice(0, log.length - 2000);
+      await store.setJSON("_log", log);
+    } catch (_) { /* לוג הוא נחמד-להיות, לא קריטי — לא נופלים בגללו */ }
+
     return json({ ok: true, rec });
   }
 
