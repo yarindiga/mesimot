@@ -207,7 +207,7 @@ def push_env(key, value):
                     cfg[k.strip()] = v.strip()
     tok, site = cfg.get("NETLIFY_TOKEN"), cfg.get("NETLIFY_SITE_ID")
     if not tok or not site:
-        print("  דילוג על APP_USERS — חסרים NETLIFY_TOKEN/NETLIFY_SITE_ID")
+        print("  דילוג על %s — חסרים NETLIFY_TOKEN/NETLIFY_SITE_ID" % key)
         return
 
     base = "https://api.netlify.com/api/v1/accounts/digayarin/env"
@@ -221,16 +221,17 @@ def push_env(key, value):
         try:
             req = urllib.request.Request(url, data=payload, method=method, headers=hdrs)
             urllib.request.urlopen(req, timeout=45).read()
-            print("  APP_USERS עודכן ב-Netlify (%d משתמשים)" % len(json.loads(value)))
+            print("  %s עודכן ב-Netlify" % key)
             return
         except urllib.error.HTTPError as e:
             last = "%s %s" % (e.code, e.read().decode("utf-8", "replace")[:120])
-    print("  אזהרה: APP_USERS לא עודכן —", last)
+    print("  אזהרה: %s לא עודכן —" % key, last)
 
 
 def main():
     users = json.load(open(os.path.join(HERE, "users.json"), encoding="utf-8"))
     token = monday_token()
+    push_env("MONDAY_TOKEN", token)  # כדי ש-functions/updates.mjs יוכל לדחוף עדכוני סטטוס למאנדיי
 
     keys_path = os.path.join(HERE, "keys.json")
     store = (json.load(open(keys_path, encoding="utf-8"))
