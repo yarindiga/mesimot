@@ -80,17 +80,26 @@ export default async (req) => {
 
     const { blobs } = await store.list();
     const updates = [];
-    let clearedAt = 0, history = [];
+    const logKeys = [];
+    let clearedAt = 0;
     for (const b of blobs) {
       if (b.key === "_clearedAt") {
         const rec = await store.get(b.key, { type: "json" });
         clearedAt = (rec && rec.at) || 0;
         continue;
       }
+      // פורמט ישן: מערך יחיד תחת מפתח "_log" — היה חשוף למירוץ כתיבה כשכמה עדכונים
+      // מגיעים קרוב זה לזה (כל POST קורא-משנה-כותב את כל המערך, והאחרון מנצח ומוחק את הקודם).
+      // מיגרציה חד-פעמית: כל רשומה עוברת למפתח נפרד, והמפתח הישן נמחק.
       if (b.key === "_log") {
-        if (who.admin) history = (await store.get(b.key, { type: "json" })) || [];
+        const legacy = (await store.get(b.key, { type: "json" })) || [];
+        for (const item of legacy) {
+          if (item && item.taskId) await store.setJSON(`_log_${item.at}_${item.taskId}`, item);
+        }
+        await store.delete(b.key);
         continue;
       }
+      if (b.key.startsWith("_log_")) { logKeys.push(b.key); continue; }
       const rec = await store.get(b.key, { type: "json" });
       if (!rec) continue;
       if (who.admin || rec.byId === who.id) updates.push({ taskId: b.key, ...rec });
@@ -100,7 +109,8 @@ export default async (req) => {
     // רק המנהל צריך את היסטוריית-הכול ואת חותם הניקוי — לצוות מספיק המצב הנוכחי.
     if (who.admin) {
       resp.clearedAt = clearedAt;
-      resp.history = history.slice().sort((a, b) => (b.at || 0) - (a.at || 0));
+      const history = (await Promise.all(logKeys.map((k) => store.get(k, { type: "json" })))).filter(Boolean);
+      resp.history = history.sort((a, b) => (b.at || 0) - (a.at || 0));
     }
     return json(resp);
   }
@@ -156,12 +166,10 @@ export default async (req) => {
 
     await store.setJSON(taskId, rec);
 
-    // לוג היסטוריה שלא נדרס — נשמר גם אחרי "ניקוי" המסך, וגם אחרי שהמשימה מתעדכנת שוב.
+    // לוג היסטוריה שלא נדרס — כל רשומה במפתח נפרד משלה (לא מערך משותף אחד),
+    // כדי שכמה עדכונים שמגיעים קרוב זה לזה לא ידרסו אחד את השני.
     try {
-      const log = (await store.get("_log", { type: "json" })) || [];
-      log.push({ taskId, ...rec });
-      if (log.length > 2000) log.splice(0, log.length - 2000);
-      await store.setJSON("_log", log);
+      await store.setJSON(`_log_${rec.at}_${taskId}`, { taskId, ...rec });
     } catch (_) { /* לוג הוא נחמד-להיות, לא קריטי — לא נופלים בגללו */ }
 
     return json({ ok: true, rec });
