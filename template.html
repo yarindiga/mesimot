@@ -163,7 +163,8 @@ button,input,select,textarea{font:inherit;color:inherit}
   background:var(--surface);box-shadow:var(--shadow-1);transition:border-color .15s,box-shadow .15s;
 }
 .search:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
-.bar{display:flex;gap:6px;overflow-x:auto;padding:9px 2px 2px;scrollbar-width:none}
+.barlabel{margin:9px 2px 0;font-size:11px;font-weight:600;letter-spacing:.03em;color:var(--muted)}
+.bar{display:flex;gap:6px;overflow-x:auto;padding:5px 2px 2px;scrollbar-width:none}
 .bar::-webkit-scrollbar{display:none}
 .pill{
   flex:none;display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;
@@ -207,7 +208,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 /* ============ קבוצות ושורות ============ */
 .group{margin-top:22px}
 .ghead{
-  position:sticky;top:52px;z-index:20;
+  position:sticky;top:var(--sticky-h,52px);z-index:20;
   display:flex;align-items:center;gap:8px;padding:5px 2px;margin-bottom:7px;
   font-size:12.5px;font-weight:700;background:var(--paper);
 }
@@ -233,15 +234,14 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 /* עיגול הסימון — יעד מגע אמיתי, בתחילת השורה */
 .st{
-  flex:none;margin-top:1px;width:26px;height:26px;padding:0;
+  position:relative;flex:none;margin-top:1px;width:26px;height:26px;padding:0;
   display:inline-flex;align-items:center;justify-content:center;
   border:2px solid var(--line-strong);background:transparent;color:transparent;
   border-radius:50%;cursor:pointer;font-size:14px;font-weight:700;line-height:1;
   transition:border-color .15s,background .15s,color .15s,transform .12s;
 }
-.st::after{
-  content:"";position:absolute;inset-block:2px;inset-inline-start:2px;width:44px;
-}
+/* יעד מגע אמיתי של כ-44x44 סביב העיגול הקטן, בלי לשנות את הגודל הוויזואלי */
+.st::after{ content:""; position:absolute; inset:-9px; }
 .st:hover{border-color:var(--accent)}
 .st:active{transform:scale(.9)}
 .st.working{border-color:#fdab3d;background:#fdab3d;color:#1d2129}
@@ -384,7 +384,6 @@ button,input,select,textarea{font:inherit;color:inherit}
   .hero h2{font-size:20px}
   .ring{width:50px;height:50px}
   .row{padding:10px 13px 10px 10px}
-  .ghead{top:48px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -435,6 +434,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 
   <div class="sticky">
     <input class="search" id="search" type="search" placeholder="חיפוש בכתובת, במשימה או ברקע…" aria-label="חיפוש">
+    <p class="barlabel" id="adminbarLabel" hidden>צוות</p>
     <div class="bar" id="adminbar" hidden></div>
     <div class="filters" id="filters" hidden></div>
     <div class="opts">
@@ -725,7 +725,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     row.appendChild(pop);
     // אם אין מקום למטה, נפתח כלפי מעלה; ואם השורה מתחת לסרגל הדביק — מגלגלים אליה
     var pr = pop.getBoundingClientRect();
-    var topbar = document.querySelector(".topbar").getBoundingClientRect().bottom;
+    var topbar = document.querySelector(".sticky").getBoundingClientRect().bottom;
     if (pr.bottom > window.innerHeight - 8 && row.getBoundingClientRect().top - pr.height > topbar + 8){
       pop.classList.add("up");
     } else if (pop.getBoundingClientRect().top < topbar + 8){
@@ -749,12 +749,14 @@ button,input,select,textarea{font:inherit;color:inherit}
     var bar = $("adminbar");
     bar.innerHTML = "";
     bar.hidden = true;
+    $("adminbarLabel").hidden = true;
     $("futureWrap").hidden = true;
     $("future").checked = false;
     showFuture = false;
 
     if (session.isAdmin){
       bar.hidden = false;
+      $("adminbarLabel").hidden = false;
       session.order.forEach(function(em){
         var b = document.createElement("button");
         b.type = "button"; b.className = "pill";
@@ -1131,7 +1133,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     clearedAt = 0; history = []; updatesSub = "active";
     $("resumed").hidden = true;
     $("viewing").hidden = true;
-    $("adminbar").innerHTML = ""; $("adminbar").hidden = true;
+    $("adminbar").innerHTML = ""; $("adminbar").hidden = true; $("adminbarLabel").hidden = true;
     $("futureWrap").hidden = true; $("future").checked = false; showFuture = false;
     $("toUpdates").hidden = true; $("toTasks").hidden = true;
     $("search").value = ""; query = ""; statusFilter = "all";
@@ -1142,6 +1144,13 @@ button,input,select,textarea{font:inherit;color:inherit}
     $("app").hidden = true; $("gate").hidden = false;
     $("pass").value = ""; $("gateMsg").textContent = "";
   });
+
+  // גובה הסרגל הדביק משתנה (מנהל רואה שורת בעלים נוספת, שורת הפילטרים מופיעה/נעלמת) —
+  // כותרות הקבוצות נעוגנות אליו דינמית כדי שלא יתנגשו איתו בגלילה.
+  var stickyEl = document.querySelector(".sticky");
+  function syncStickyH(){ document.documentElement.style.setProperty("--sticky-h", stickyEl.offsetHeight + "px"); }
+  if (window.ResizeObserver) new ResizeObserver(syncStickyH).observe(stickyEl);
+  else { window.addEventListener("resize", syncStickyH); syncStickyH(); }
 
   $("foot").textContent =
     "הנתונים נשלפים מלוח המשימות ומוצגים לקריאה בלבד — שינוי סטטוס או תוכן נעשה בלוח עצמו. " +
