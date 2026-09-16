@@ -10,62 +10,64 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>לוח הפולו־אפ</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@600;700&family=Assistant:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;600;700&family=Assistant:wght@400;500;600;700&display=swap');
 
 :root{
-  --paper:#f2f4f7;
+  --paper:#f4f3f0;
   --surface:#ffffff;
-  --surface-2:#f7f9fc;
-  --hover:#eef2f7;
-  --ink:#1b2330;
-  --ink-2:#48566a;
-  --muted:#7a8798;
-  --line:#e4e8ee;
-  --line-strong:#cbd2dc;
-  --accent:#0f62d6;
-  --accent-soft:#e7f0ff;
+  --surface-2:#faf9f7;
+  --hover:#f1efeb;
+  --ink:#14171c;
+  --ink-2:#49515f;
+  --muted:#8b8f98;
+  --line:#e7e4df;
+  --line-strong:#d4d0c9;
+  --accent:#4338ca;
+  --accent-soft:#ecebfc;
   --signal:#c0392b;
   --signal-soft:#fdecea;
-  --ok:#0f8a52;
+  --ok:#0e8b52;
   --ok-soft:#e6f6ee;
-  --warn:#b3730c;
+  --work:#a9690a;
+  --work-soft:#fdf3e2;
   --on-accent:#ffffff;
-  --shadow-1:0 1px 2px rgba(20,28,40,.05);
-  --shadow-2:0 6px 24px rgba(20,28,40,.10);
+  --mw:#fdab3d;
+  --md:#00c875;
+  --shadow-1:0 1px 2px rgba(20,20,25,.05);
+  --shadow-2:0 10px 30px rgba(20,20,25,.12);
+  --shadow-3:0 22px 55px rgba(20,20,25,.20);
   --font-display:'Frank Ruhl Libre','Times New Roman',serif;
   --font-body:'Assistant','Segoe UI',system-ui,-apple-system,sans-serif;
-  --r:10px;
-  --maxw:880px;
+  --r:12px;
+  --maxw:1280px;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --paper:#0d1117;
-    --surface:#161c25;
-    --surface-2:#1c2430;
-    --hover:#212b38;
-    --ink:#e8edf4;
-    --ink-2:#bcc8d6;
-    --muted:#8695a7;
-    --line:#28323f;
-    --line-strong:#3a4655;
-    --accent:#6aabff;
-    --accent-soft:#132840;
-    --signal:#f08a76;
-    --signal-soft:#3a1e18;
-    --ok:#5cc794;
-    --ok-soft:#122e22;
-    --warn:#e0a94a;
-    --on-accent:#0d1117;
-    --shadow-1:0 1px 2px rgba(0,0,0,.35);
-    --shadow-2:0 6px 24px rgba(0,0,0,.45);
+    --paper:#0f1115; --surface:#171a20; --surface-2:#1d2128; --hover:#222731;
+    --ink:#eceef2; --ink-2:#bcc2cc; --muted:#878e9a;
+    --line:#272c35; --line-strong:#3a414d;
+    --accent:#8b87f5; --accent-soft:#211f3c;
+    --signal:#f08a76; --signal-soft:#3a1e18;
+    --ok:#5cc794; --ok-soft:#10291f;
+    --work:#e0a94a; --work-soft:#2e2413;
+    --on-accent:#111119;
+    --shadow-1:0 1px 2px rgba(0,0,0,.40);
+    --shadow-2:0 10px 30px rgba(0,0,0,.50);
+    --shadow-3:0 22px 55px rgba(0,0,0,.62);
   }
 }
 :root[data-theme="dark"]{
-  --paper:#0d1117; --surface:#161c25; --surface-2:#1c2430; --hover:#212b38;
-  --ink:#e8edf4; --ink-2:#bcc8d6; --muted:#8695a7; --line:#28323f; --line-strong:#3a4655;
-  --accent:#6aabff; --accent-soft:#132840; --signal:#f08a76; --signal-soft:#3a1e18;
-  --ok:#5cc794; --ok-soft:#122e22; --warn:#e0a94a; --on-accent:#0d1117;
-  --shadow-1:0 1px 2px rgba(0,0,0,.35); --shadow-2:0 6px 24px rgba(0,0,0,.45);
+  --paper:#0f1115; --surface:#171a20; --surface-2:#1d2128; --hover:#222731;
+  --ink:#eceef2; --ink-2:#bcc2cc; --muted:#878e9a;
+  --line:#272c35; --line-strong:#3a414d;
+  --accent:#8b87f5; --accent-soft:#211f3c;
+  --signal:#f08a76; --signal-soft:#3a1e18;
+  --ok:#5cc794; --ok-soft:#10291f;
+  --work:#e0a94a; --work-soft:#2e2413;
+  --on-accent:#111119;
+  --shadow-1:0 1px 2px rgba(0,0,0,.40);
+  --shadow-2:0 10px 30px rgba(0,0,0,.50);
+  --shadow-3:0 22px 55px rgba(0,0,0,.62);
 }
 
 *{box-sizing:border-box}
@@ -77,313 +79,459 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 button,input,select,textarea{font:inherit;color:inherit}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
 
 /* ============ כניסה ============ */
-.gate{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:26px 18px}
-.gate-card{
-  width:100%;max-width:380px;background:var(--surface);border:1px solid var(--line);
-  border-radius:16px;padding:32px 28px 26px;box-shadow:var(--shadow-2);
+.gate{
+  min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:26px 18px;
+  background:
+    radial-gradient(1100px 620px at 78% -8%, var(--accent-soft), transparent 62%),
+    radial-gradient(760px 520px at 8% 104%, var(--hover), transparent 60%);
 }
-.brand{display:flex;align-items:baseline;gap:10px;margin-bottom:5px}
-.brand h1{font-family:var(--font-display);font-weight:700;font-size:30px;margin:0;letter-spacing:-.015em}
-.brand .tick{width:9px;height:9px;border-radius:50%;background:var(--accent);flex:none;transform:translateY(-5px)}
-.gate-sub{color:var(--muted);font-size:14px;margin:0 0 24px}
-.field{display:block;margin-bottom:14px}
+.gate-card{
+  width:100%;max-width:392px;background:var(--surface);border:1px solid var(--line);
+  border-radius:20px;padding:34px 30px 26px;box-shadow:var(--shadow-3);
+}
+.brand{display:flex;align-items:center;gap:11px;margin-bottom:6px}
+.brand h1{font-family:var(--font-display);font-weight:700;font-size:31px;margin:0;letter-spacing:-.02em}
+.brand .tick{
+  width:34px;height:34px;border-radius:11px;flex:none;
+  background:linear-gradient(145deg,var(--accent),color-mix(in srgb,var(--accent) 60%, #000 12%));
+  display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:17px;
+  box-shadow:0 5px 14px color-mix(in srgb,var(--accent) 34%, transparent);
+}
+.gate-sub{color:var(--muted);font-size:14px;margin:0 0 26px}
+.field{display:block;margin-bottom:15px}
 .field span{display:block;font-size:12.5px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
 .field input{
-  width:100%;padding:11px 13px;background:var(--surface-2);color:var(--ink);
+  width:100%;padding:12px 14px;background:var(--surface-2);color:var(--ink);
   border:1px solid var(--line-strong);border-radius:var(--r);transition:border-color .15s,box-shadow .15s;
 }
 .field input:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
-.remember{display:flex;align-items:center;gap:9px;margin:4px 0 18px;font-size:13.5px;color:var(--ink-2);cursor:pointer}
+.remember{display:flex;align-items:center;gap:9px;margin:4px 0 20px;font-size:13.5px;color:var(--ink-2);cursor:pointer}
 .remember input{accent-color:var(--accent);width:16px;height:16px;flex:none}
 .btn{
-  width:100%;padding:12px;background:var(--accent);color:var(--on-accent);border:0;
-  border-radius:var(--r);font-weight:700;font-size:15.5px;cursor:pointer;transition:filter .15s;
+  width:100%;padding:13px;background:var(--accent);color:#fff;border:0;
+  border-radius:var(--r);font-weight:700;font-size:15.5px;cursor:pointer;
+  transition:filter .15s,transform .12s;box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 30%, transparent);
 }
 .btn:hover{filter:brightness(1.08)}
+.btn:active{transform:translateY(1px)}
 .btn[disabled]{opacity:.6;cursor:progress}
 .gate-msg{min-height:20px;margin-top:12px;font-size:13.5px;color:var(--signal);font-weight:600}
-.gate-note{margin-top:20px;padding-top:15px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.gate-note{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
 
 /* ============ מעטפת ============ */
-.app{max-width:var(--maxw);margin:0 auto;padding:0 14px 72px}
+.app{max-width:var(--maxw);margin:0 auto;padding:0 16px 80px}
 
-.topline{
-  display:flex;align-items:center;gap:12px;
-  padding:16px 2px 0;font-size:13px;color:var(--muted);
+.stickytop{
+  position:sticky;top:0;z-index:40;margin:0 -16px;padding:0 16px;
+  background:color-mix(in srgb,var(--paper) 88%, transparent);
+  backdrop-filter:saturate(1.6) blur(14px);-webkit-backdrop-filter:saturate(1.6) blur(14px);
+  border-bottom:1px solid transparent;transition:border-color .2s;
 }
-.topline .mark{
-  font-family:var(--font-display);font-weight:700;font-size:16px;color:var(--ink);
-  letter-spacing:-.01em;flex:1;
-}
-.linkbtn{
-  background:none;border:0;color:var(--accent);font-size:13px;font-weight:600;
-  cursor:pointer;padding:5px 7px;border-radius:7px;
-}
-.linkbtn:hover{background:var(--accent-soft)}
-.who{white-space:nowrap}
+.stickytop.scrolled{border-bottom-color:var(--line)}
+.inner{max-width:var(--maxw);margin:0 auto}
 
-/* ---- כותרת ראשית ---- */
-.hero{
-  background:var(--surface);border:1px solid var(--line);border-radius:14px;
-  padding:16px 18px;margin-top:12px;box-shadow:var(--shadow-1);
+/* ---- שורת אפליקציה ---- */
+.appbar{display:flex;align-items:center;gap:8px;height:58px}
+.mark{display:flex;align-items:center;gap:9px;min-width:0;flex:1}
+.mark .dot{
+  width:28px;height:28px;border-radius:9px;flex:none;
+  background:linear-gradient(145deg,var(--accent),color-mix(in srgb,var(--accent) 58%, #000 14%));
+  display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;
 }
-.eyebrow{margin:0;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--muted)}
-.hero h2{
-  font-family:var(--font-display);font-weight:700;font-size:23px;margin:2px 0 0;
-  letter-spacing:-.015em;text-wrap:balance;
+.mark .name{
+  font-family:var(--font-display);font-weight:700;font-size:17px;color:var(--ink);
+  letter-spacing:-.015em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-.hero-row{display:flex;align-items:flex-start;gap:14px}
-.hero-row > div:first-child{flex:1;min-width:0}
-.ring{flex:none;width:56px;height:56px;position:relative}
-.ring svg{transform:rotate(-90deg);display:block}
-.ring .val{
-  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-size:13px;font-weight:700;color:var(--ok);font-variant-numeric:tabular-nums;
+.iconbtn{
+  position:relative;flex:none;height:38px;min-width:38px;padding:0 10px;border-radius:11px;
+  border:1px solid transparent;background:transparent;color:var(--ink-2);cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  font-size:13px;font-weight:600;transition:background .15s,color .15s,border-color .15s;
 }
-.stats{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px}
+.iconbtn:hover{background:var(--hover);color:var(--ink)}
+.iconbtn svg{width:18px;height:18px;flex:none}
+.iconbtn.primary{background:var(--accent-soft);color:var(--accent)}
+.iconbtn.primary:hover{background:color-mix(in srgb,var(--accent-soft) 70%, var(--accent) 12%)}
+.badge{
+  min-width:19px;height:19px;padding:0 6px;border-radius:999px;background:var(--accent);
+  color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;
+  font-variant-numeric:tabular-nums;
+}
+.badge[data-zero="1"]{background:var(--line-strong);color:var(--ink-2)}
+.who{
+  font-size:12.5px;color:var(--muted);white-space:nowrap;
+  padding-inline-end:4px;
+}
+
+/* ---- פס היום ---- */
+.today{padding:6px 0 14px}
+.today-row{display:flex;align-items:flex-end;gap:14px}
+.today-row > div:first-child{flex:1;min-width:0}
+.eyebrow{margin:0;font-size:12px;font-weight:600;letter-spacing:.03em;color:var(--muted)}
+.today h2{
+  font-family:var(--font-display);font-weight:700;font-size:26px;margin:1px 0 0;
+  letter-spacing:-.025em;text-wrap:balance;line-height:1.2;
+}
+.pct{
+  flex:none;text-align:center;font-variant-numeric:tabular-nums;
+}
+.pct b{display:block;font-size:20px;font-weight:700;color:var(--ok);line-height:1.1}
+.pct span{font-size:10.5px;font-weight:600;color:var(--muted);letter-spacing:.03em}
+.track{height:5px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:11px}
+.track i{display:block;height:100%;border-radius:99px;background:var(--ok);transition:width .45s cubic-bezier(.2,.7,.3,1)}
+.stats{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
 .stat{
-  display:inline-flex;align-items:baseline;gap:6px;padding:4px 11px;border-radius:999px;
-  background:var(--surface-2);border:1px solid var(--line);font-size:12.5px;color:var(--muted);
+  display:inline-flex;align-items:baseline;gap:6px;padding:5px 12px;border-radius:999px;
+  background:var(--surface);border:1px solid var(--line);font-size:12.5px;color:var(--muted);
+  box-shadow:var(--shadow-1);
 }
 .stat b{font-size:14px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.stat.work{background:var(--work-soft);border-color:transparent;color:var(--work)}
+.stat.work b{color:var(--work)}
 .stat.done{background:var(--ok-soft);border-color:transparent;color:var(--ok)}
 .stat.done b{color:var(--ok)}
-.synced{margin-top:11px;font-size:11.5px;color:var(--muted)}
+.synced{margin:9px 0 0;font-size:11.5px;color:var(--muted)}
 
-/* ---- פקדים דביקים ---- */
-.sticky{
-  position:sticky;top:0;z-index:40;margin-top:14px;padding:10px 0;
-  background:linear-gradient(var(--paper) 72%, transparent);
+/* ---- סרגל כלים ---- */
+.toolbar{padding-bottom:10px;display:flex;flex-direction:column;gap:8px}
+.tbrow{display:flex;align-items:center;gap:8px}
+.searchwrap{position:relative;flex:1;min-width:0}
+.searchwrap svg{
+  position:absolute;inset-inline-start:13px;top:50%;transform:translateY(-50%);
+  width:16px;height:16px;color:var(--muted);pointer-events:none;
 }
 .search{
-  width:100%;padding:10px 14px;border:1px solid var(--line-strong);border-radius:999px;
+  width:100%;padding:11px 40px 11px 14px;border:1px solid var(--line-strong);border-radius:999px;
   background:var(--surface);box-shadow:var(--shadow-1);transition:border-color .15s,box-shadow .15s;
 }
 .search:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
-.barlabel{margin:9px 2px 0;font-size:11px;font-weight:600;letter-spacing:.03em;color:var(--muted)}
-.bar{display:flex;gap:6px;overflow-x:auto;padding:5px 2px 2px;scrollbar-width:none}
-.bar::-webkit-scrollbar{display:none}
+.seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:999px;overflow:hidden;background:var(--surface);flex:none}
+.seg button{border:0;background:none;padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;transition:background .15s,color .15s}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.toggle{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2);cursor:pointer;white-space:nowrap;flex:none}
+.toggle input{accent-color:var(--accent);width:15px;height:15px}
+.barlabel{
+  margin:0;font-size:10.5px;font-weight:700;letter-spacing:.06em;color:var(--muted);
+  flex:none;align-self:center;padding-inline-end:2px;
+}
+.chiprow{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:1px 0;align-items:center}
+.chiprow::-webkit-scrollbar{display:none}
 .pill{
-  flex:none;display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;
+  flex:none;display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border-radius:999px;
   border:1px solid var(--line-strong);background:var(--surface);cursor:pointer;
-  font-size:13px;font-weight:600;white-space:nowrap;transition:background .15s,border-color .15s,color .15s;
+  font-size:13px;font-weight:600;white-space:nowrap;transition:background .15s,border-color .15s,color .15s,transform .12s;
 }
 .pill:hover{border-color:var(--accent);color:var(--accent)}
+.pill:active{transform:scale(.97)}
 .pill .n{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-.pill[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-.pill[aria-pressed="true"]:hover{color:var(--on-accent)}
-.pill[aria-pressed="true"] .n{color:var(--on-accent);opacity:.78}
-.opts{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;padding:8px 2px 0}
-.seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:999px;overflow:hidden;background:var(--surface)}
-.seg button{border:0;background:none;padding:5px 13px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer}
-.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
-.seglabel{font-size:12px;color:var(--muted)}
-.toggle{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2);cursor:pointer}
-.toggle input{accent-color:var(--accent);width:15px;height:15px}
+.pill[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.pill[aria-pressed="true"]:hover{color:#fff}
+.pill[aria-pressed="true"] .n{color:#fff;opacity:.78}
 .statusline{display:none}
 
-.resumed{
+.banner{
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;
   background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r);
-  padding:10px 14px;font-size:13.5px;color:var(--ink-2);box-shadow:var(--shadow-1);
+  padding:11px 15px;font-size:13.5px;color:var(--ink-2);box-shadow:var(--shadow-1);
 }
-.resumed b{color:var(--ink)}
-.resumed button{
-  margin-inline-start:auto;background:var(--accent);color:var(--on-accent);border:0;
-  border-radius:999px;padding:5px 14px;font-size:12.5px;font-weight:700;cursor:pointer;
-}
-.viewing{
-  display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;
-  background:var(--accent-soft);border:1px solid transparent;border-radius:var(--r);
-  padding:10px 14px;font-size:13.5px;font-weight:600;color:var(--accent);
-}
-.viewing button{
-  margin-inline-start:auto;background:var(--accent);color:var(--on-accent);border:0;
-  border-radius:999px;padding:5px 13px;font-size:12.5px;font-weight:700;cursor:pointer;
+.banner b{color:var(--ink)}
+.banner.accent{background:var(--accent-soft);border-color:transparent;color:var(--accent);font-weight:600}
+.banner button{
+  margin-inline-start:auto;background:var(--accent);color:#fff;border:0;
+  border-radius:999px;padding:6px 15px;font-size:12.5px;font-weight:700;cursor:pointer;
 }
 
+/* ============ פריסה ============ */
+.layout{display:block}
+.pane{display:none}
+@media (min-width:1080px){
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) 392px;gap:24px;align-items:start}
+  .pane{
+    display:block;position:sticky;top:calc(var(--sticky-h,150px) + 16px);
+    max-height:calc(100dvh - var(--sticky-h,150px) - 34px);overflow:auto;
+    background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    box-shadow:var(--shadow-1);padding:20px;scrollbar-width:thin;
+  }
+  .row.open + .detail{display:none}
+  .row.open{background:var(--accent-soft)}
+}
+.pane-empty{text-align:center;color:var(--muted);font-size:13.5px;padding:34px 10px}
+.pane-empty .ico{font-size:26px;display:block;margin-bottom:8px;opacity:.55}
+.pane h3{
+  font-family:var(--font-display);font-size:21px;margin:0;letter-spacing:-.02em;line-height:1.25;
+}
+.pane .pane-city{font-size:12.5px;color:var(--muted);margin:3px 0 0}
+.pane-head{display:flex;align-items:flex-start;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.pane-head > div:first-child{flex:1;min-width:0}
+
 /* ============ קבוצות ושורות ============ */
-.group{margin-top:22px}
+.group{margin-top:20px}
+.group:first-child{margin-top:4px}
 .ghead{
-  position:sticky;top:var(--sticky-h,52px);z-index:20;
-  display:flex;align-items:center;gap:8px;padding:5px 2px;margin-bottom:7px;
-  font-size:12.5px;font-weight:700;background:var(--paper);
+  position:sticky;top:var(--sticky-h,120px);z-index:20;
+  display:flex;align-items:center;gap:8px;padding:7px 2px;margin-bottom:8px;
+  font-size:12.5px;font-weight:700;
+  background:color-mix(in srgb,var(--paper) 90%, transparent);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
 }
 .ghead .dot{width:9px;height:9px;border-radius:3px;background:var(--gc);flex:none}
 .ghead .gname{color:var(--gc-l)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .ghead .gname{color:var(--gc-d)}}
 :root[data-theme="dark"] .ghead .gname{color:var(--gc-d)}
-.ghead .gn{color:var(--muted);font-weight:600;font-size:11.5px;font-variant-numeric:tabular-nums}
+.ghead .gn{
+  color:var(--muted);font-weight:700;font-size:11px;font-variant-numeric:tabular-nums;
+  background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:1px 8px;
+}
 .ghead::after{content:"";flex:1;height:1px;background:var(--line)}
 
 .rows{
-  background:var(--surface);border:1px solid var(--line);border-radius:12px;
-  box-shadow:var(--shadow-1);
+  background:var(--surface);border:1px solid var(--line);border-radius:16px;
+  box-shadow:var(--shadow-1);overflow:hidden;
 }
 .row{
-  position:relative;display:flex;align-items:flex-start;gap:11px;
-  padding:11px 14px 11px 12px;border-top:1px solid var(--line);cursor:pointer;
-  transition:background .12s;
+  position:relative;display:flex;align-items:flex-start;gap:12px;
+  padding:13px 16px 13px 12px;border-top:1px solid var(--line);cursor:pointer;
+  transition:background .14s;
 }
 .row:first-child{border-top:0}
 .row::before{content:"";position:absolute;inset-block:0;inset-inline-start:0;width:3px;background:var(--gc)}
-.row:hover,.row.open{background:var(--hover)}
+.row:hover{background:var(--hover)}
+.row.open{background:var(--hover)}
+.row.is-done{background:color-mix(in srgb,var(--ok-soft) 55%, transparent)}
+.row.is-done .addr{color:var(--ink-2)}
+.row.is-work::before{background:var(--mw)}
+.row.is-done::before{background:var(--md)}
 
-/* עיגול הסימון — יעד מגע אמיתי, בתחילת השורה */
+/* עיגול הסימון — הפעולה הראשית */
 .st{
-  position:relative;flex:none;margin-top:1px;width:26px;height:26px;padding:0;
+  position:relative;flex:none;margin-top:1px;width:28px;height:28px;padding:0;
   display:inline-flex;align-items:center;justify-content:center;
-  border:2px solid var(--line-strong);background:transparent;color:transparent;
+  border:2px solid var(--line-strong);background:var(--surface);color:transparent;
   border-radius:50%;cursor:pointer;font-size:14px;font-weight:700;line-height:1;
-  transition:border-color .15s,background .15s,color .15s,transform .12s;
+  transition:border-color .15s,background .15s,color .15s,transform .12s,box-shadow .15s;
 }
-/* יעד מגע אמיתי של כ-44x44 סביב העיגול הקטן, בלי לשנות את הגודל הוויזואלי */
-.st::after{ content:""; position:absolute; inset:-9px; }
-.st:hover{border-color:var(--accent)}
-.st:active{transform:scale(.9)}
-.st.working{border-color:#fdab3d;background:#fdab3d;color:#1d2129}
-.st.done{border-color:#00c875;background:#00c875;color:#0d2b1c}
+/* יעד מגע אמיתי של כ-46x46 סביב העיגול, בלי לשנות את הגודל הוויזואלי */
+.st::after{content:"";position:absolute;inset:-9px}
+.st:hover{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.st:active{transform:scale(.88)}
+.st.working{border-color:var(--mw);background:var(--mw);color:#3d2a06}
+.st.done{border-color:var(--md);background:var(--md);color:#062b18}
 .st.saving{opacity:.5;cursor:progress}
 
 .rmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
-.rline{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.rline{display:flex;align-items:center;gap:8px}
 .addr{
-  font-weight:600;font-size:15.5px;letter-spacing:-.005em;color:var(--ink);
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;
+  font-weight:600;font-size:15.5px;letter-spacing:-.01em;color:var(--ink);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;
 }
 .city{font-size:11.5px;color:var(--muted);white-space:nowrap;flex:none}
 .chip{
-  flex:none;font-size:11px;font-weight:600;padding:2px 9px;border-radius:5px;
-  background:var(--line);color:var(--ink-2);white-space:nowrap;line-height:1.55;
+  flex:none;font-size:11px;font-weight:700;padding:3px 9px;border-radius:7px;
+  background:var(--line);color:var(--ink-2);white-space:nowrap;line-height:1.5;
 }
 .date{
-  flex:none;margin-inline-start:auto;font-size:11.5px;font-weight:700;
+  flex:none;font-size:11.5px;font-weight:700;
   font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted);
+  background:var(--surface-2);border:1px solid var(--line);border-radius:7px;padding:2px 7px;
 }
 .rprev{
   font-size:12.5px;line-height:1.45;color:var(--muted);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 .row.open .rprev{display:none}
-.caret,.brk{display:none}
-
-@media (hover:hover) and (pointer:fine) and (min-width:701px){
-  .row:hover:not(.open) .pop{visibility:visible}
-  .rprev{display:none}
+.rside{display:flex;align-items:center;gap:6px;flex:none;margin-inline-start:auto}
+.callbtn{
+  flex:none;width:36px;height:36px;border-radius:11px;text-decoration:none;
+  border:1px solid var(--line);background:var(--surface-2);color:var(--accent);
+  display:inline-flex;align-items:center;justify-content:center;
+  transition:background .15s,transform .12s,border-color .15s;
 }
-.pop{
-  position:absolute;top:calc(100% - 2px);inset-inline:12px;z-index:30;
-  background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r);
-  box-shadow:var(--shadow-2);padding:11px 14px;font-size:13.5px;line-height:1.5;color:var(--ink-2);
-  white-space:pre-wrap;overflow:hidden;text-align:right;
-  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:5;
-  visibility:hidden;pointer-events:none;
-}
+.callbtn svg{width:16px;height:16px}
+.callbtn:hover{background:var(--accent-soft);border-color:transparent}
+.callbtn:active{transform:scale(.92)}
 
-.detail{display:none;padding:0 24px 15px 46px;background:var(--hover);border-top:1px solid var(--line)}
+.detail{display:none;padding:2px 26px 18px 50px;background:var(--hover);border-top:1px solid var(--line)}
 .row.open + .detail{display:block}
-.detail .task-desc{margin:12px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink);font-size:14.5px}
-.detail .bgsec{margin-top:14px}
-.detail .bgsec h4{margin:0 0 5px;font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--muted)}
-.detail .bgsec p{
+
+/* ---- תוכן הפירוט (משותף לפאנל ולשורה) ---- */
+.dsec{margin-top:16px}
+.dsec > h4{
+  margin:0 0 7px;font-size:10.5px;font-weight:700;letter-spacing:.08em;color:var(--muted);
+  display:flex;align-items:center;gap:7px;
+}
+.dsec > h4::after{content:"";flex:1;height:1px;background:var(--line)}
+.dtask{
+  margin:0;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink);font-size:14.5px;line-height:1.55;
+  font-weight:500;
+}
+.dbox{
   margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13.5px;line-height:1.6;color:var(--ink-2);
-  background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;
-  max-height:280px;overflow-y:auto;
+  background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px 13px;
 }
-.detail .bgsec a{color:var(--accent);font-weight:600;text-decoration:none;border-bottom:1px solid currentColor}
+.dsec a{color:var(--accent);font-weight:600;text-decoration:none;border-bottom:1px solid currentColor}
 
-/* ============ בחירת סטטוס ============ */
-.stpop.up{top:auto;bottom:calc(100% - 2px)}
-.stpop{
-  position:absolute;top:calc(100% - 2px);inset-inline-end:10px;z-index:60;width:min(300px,90vw);
-  background:var(--surface);border:1px solid var(--line-strong);border-radius:14px;
-  box-shadow:var(--shadow-2);padding:14px;text-align:right;cursor:default;
+/* טיימליין של "סטטוס הפרויקט" */
+.tl{position:relative;margin:0;padding:0;list-style:none;max-height:330px;overflow-y:auto;scrollbar-width:thin}
+.tl::before{content:"";position:absolute;inset-inline-start:6px;top:8px;bottom:8px;width:2px;background:var(--line)}
+.tl-item{position:relative;padding-inline-start:24px;padding-bottom:15px}
+.tl-item:last-child{padding-bottom:2px}
+.tl-dot{
+  position:absolute;inset-inline-start:1px;top:4px;width:12px;height:12px;border-radius:50%;
+  background:var(--surface);border:2px solid var(--line-strong);
 }
-.stpop h5{margin:0 0 11px;font-size:12.5px;font-weight:700;color:var(--muted)}
-.stpop .picks{display:flex;gap:8px;margin-bottom:10px}
-.stpop .picks button{
-  flex:1;border:1px solid transparent;border-radius:10px;
-  padding:12px 6px;font-size:14px;font-weight:700;cursor:pointer;transition:transform .12s,filter .15s;
+.tl-item.newest .tl-dot{border-color:var(--accent);background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.tl-date{
+  font-size:11px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;letter-spacing:.02em;
 }
-.stpop .picks button:hover{filter:brightness(.96)}
-.stpop .picks button:active{transform:scale(.97)}
-.stpop .picks .w{background:#fdab3d;color:#1d2129}
-.stpop .picks .d{background:#00c875;color:#10241a}
-.stpop textarea{
-  width:100%;min-height:54px;resize:vertical;padding:9px 11px;font-size:13.5px;
-  border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--ink);
+.tl-item.newest .tl-date::after{
+  content:"אחרון";margin-inline-start:7px;font-size:9.5px;letter-spacing:.06em;
+  background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:1px 7px;
 }
-.stpop textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
-.stpop .foot2{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
-.stpop .clear{background:none;border:0;color:var(--signal);font-size:12.5px;font-weight:600;cursor:pointer;padding:5px}
-.stpop .close{background:none;border:0;color:var(--muted);font-size:12.5px;font-weight:600;cursor:pointer;padding:5px}
+.tl-body{margin-top:3px;font-size:13.5px;line-height:1.6;color:var(--ink-2);white-space:pre-wrap;overflow-wrap:anywhere}
+.tl-body a{color:var(--accent);font-weight:600;text-decoration:none;border-bottom:1px solid currentColor}
 
-@media (max-width:700px){
-  .stpop, .stpop.up{
-    position:fixed;inset-inline:0;bottom:0;top:auto;width:auto;
-    border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));
-    box-shadow:0 -10px 34px rgba(0,0,0,.28);
-    animation:sheet .22s cubic-bezier(.2,.7,.3,1);
-  }
-  .stpop h5{font-size:14px;color:var(--ink)}
-  .stpop .picks button{padding:16px 8px;font-size:15.5px;border-radius:12px}
-  .stpop textarea{min-height:64px;font-size:15px}
-  .stpop .clear,.stpop .close{padding:9px 6px;font-size:13.5px}
+/* אנשי קשר */
+.tels{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:9px}
+.telchip{
+  display:inline-flex;align-items:center;gap:7px;text-decoration:none;
+  background:var(--accent-soft);color:var(--accent);border-radius:999px;
+  padding:6px 13px 6px 10px;font-size:13px;font-weight:700;direction:ltr;
+  font-variant-numeric:tabular-nums;transition:filter .15s,transform .12s;
 }
-@keyframes sheet{from{transform:translateY(100%)}to{transform:none}}
+.telchip svg{width:14px;height:14px}
+.telchip:hover{filter:brightness(.96)}
+.telchip:active{transform:scale(.96)}
+
+/* ============ גיליון סימון סטטוס ============ */
 .sheetbg{
-  position:fixed;inset:0;z-index:55;background:rgba(12,18,28,.42);
-  animation:fade .2s;
+  position:fixed;inset:0;z-index:55;background:rgba(10,12,18,.5);
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);animation:fade .2s;
 }
 @keyframes fade{from{opacity:0}to{opacity:1}}
+.sheet{
+  position:fixed;z-index:60;background:var(--surface);
+  border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow-3);
+  padding:20px;text-align:right;cursor:default;
+  inset-inline:0;margin-inline:auto;width:min(420px,calc(100vw - 32px));
+  top:50%;transform:translateY(-50%);animation:pop .2s cubic-bezier(.2,.7,.3,1);
+}
+@keyframes pop{from{opacity:0;transform:translateY(-50%) scale(.96)}to{opacity:1;transform:translateY(-50%) scale(1)}}
+.sheet h5{margin:0;font-family:var(--font-display);font-size:19px;font-weight:700;letter-spacing:-.02em}
+.sheet .sub{margin:2px 0 16px;font-size:12.5px;color:var(--muted)}
+.picks{display:flex;gap:10px;margin-bottom:14px}
+.picks button{
+  flex:1;border:2px solid transparent;border-radius:14px;background:var(--surface-2);
+  padding:15px 8px;font-size:14.5px;font-weight:700;cursor:pointer;color:var(--ink);
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  transition:transform .12s,border-color .15s,background .15s;
+}
+.picks button .bub{
+  width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  font-size:14px;
+}
+.picks .w .bub{background:var(--mw);color:#3d2a06}
+.picks .d .bub{background:var(--md);color:#062b18}
+.picks button:hover{background:var(--hover)}
+.picks button:active{transform:scale(.97)}
+.picks .w[aria-pressed="true"]{border-color:var(--mw);background:var(--work-soft)}
+.picks .d[aria-pressed="true"]{border-color:var(--md);background:var(--ok-soft)}
+.sheet label.lbl{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:6px;letter-spacing:.03em}
+.sheet textarea{
+  width:100%;min-height:86px;resize:vertical;padding:11px 13px;font-size:14px;line-height:1.5;
+  border:1px solid var(--line-strong);border-radius:12px;background:var(--surface-2);color:var(--ink);
+}
+.sheet textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.lastnote{
+  background:var(--surface-2);border:1px solid var(--line);border-radius:11px;
+  padding:9px 12px;margin-bottom:12px;font-size:12.5px;color:var(--ink-2);line-height:1.5;
+}
+.lastnote b{display:block;font-size:10.5px;letter-spacing:.05em;color:var(--muted);margin-bottom:3px;font-weight:700}
+.sheet .foot2{display:flex;align-items:center;gap:8px;margin-top:14px}
+.sheet .save{
+  flex:1;background:var(--accent);color:#fff;border:0;border-radius:12px;padding:12px;
+  font-size:14.5px;font-weight:700;cursor:pointer;transition:filter .15s,transform .12s;
+}
+.sheet .save:hover{filter:brightness(1.07)}
+.sheet .save:active{transform:translateY(1px)}
+.sheet .save[disabled]{opacity:.45;cursor:not-allowed}
+.sheet .clear{background:none;border:0;color:var(--signal);font-size:13px;font-weight:600;cursor:pointer;padding:9px 10px;border-radius:9px}
+.sheet .clear:hover{background:var(--signal-soft)}
+.sheet .close{background:none;border:0;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;padding:9px 10px;border-radius:9px}
+.sheet .close:hover{background:var(--hover)}
 
-.filters{display:flex;gap:6px;overflow-x:auto;padding:8px 2px 2px;scrollbar-width:none}
-.filters::-webkit-scrollbar{display:none}
+@media (max-width:700px){
+  .sheet{
+    inset-inline:0;bottom:0;top:auto;transform:none;width:auto;
+    border-radius:22px 22px 0 0;border-bottom:0;
+    padding:10px 18px calc(18px + env(safe-area-inset-bottom));
+    animation:sheetup .24s cubic-bezier(.2,.7,.3,1);max-height:92dvh;overflow-y:auto;
+  }
+  @keyframes sheetup{from{transform:translateY(100%)}to{transform:none}}
+  .sheet::before{
+    content:"";display:block;width:38px;height:4px;border-radius:99px;
+    background:var(--line-strong);margin:0 auto 14px;
+  }
+  .picks button{padding:17px 8px;font-size:15.5px}
+  .sheet textarea{font-size:16px}
+}
 
 .toast{
-  position:fixed;inset-inline:0;bottom:calc(20px + env(safe-area-inset-bottom));
+  position:fixed;inset-inline:0;bottom:calc(22px + env(safe-area-inset-bottom));
   margin:0 auto;width:max-content;max-width:90vw;z-index:90;
-  background:var(--ink);color:var(--paper);padding:10px 20px;border-radius:999px;
+  background:var(--ink);color:var(--paper);padding:11px 22px;border-radius:999px;
   font-size:13.5px;font-weight:600;box-shadow:var(--shadow-2);
-  opacity:0;transform:translateY(10px);transition:opacity .2s,transform .2s;pointer-events:none;
+  opacity:0;transform:translateY(12px);transition:opacity .2s,transform .2s;pointer-events:none;
 }
 .toast.show{opacity:1;transform:none}
 .toast.bad{background:var(--signal);color:#fff}
 
 /* ============ עדכונים ============ */
-.utools{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.ulist{display:flex;flex-direction:column;gap:8px}
-.uday{font-size:11.5px;font-weight:700;letter-spacing:.05em;color:var(--muted);margin:16px 2px 3px}
-.uitem{
-  display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;background:var(--surface);
-  border:1px solid var(--line);border-radius:11px;padding:11px 14px;box-shadow:var(--shadow-1);
+.utools{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.ulist{display:flex;flex-direction:column;gap:9px}
+.uday{
+  font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--muted);margin:18px 2px 5px;
+  display:flex;align-items:center;gap:8px;
 }
-.uitem .uwho{font-weight:700;font-size:13.5px;flex:none}
-.uitem .uaddr{flex:1;min-width:0;font-size:14.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.uitem .utime{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
-.uitem .unote{flex-basis:100%;font-size:13px;color:var(--ink-2);white-space:pre-wrap;margin-top:3px}
-.badge{
-  display:inline-block;min-width:18px;padding:0 6px;border-radius:999px;background:var(--accent);
-  color:var(--on-accent);font-size:11px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;
+.uday::after{content:"";flex:1;height:1px;background:var(--line)}
+.uitem{
+  display:flex;align-items:flex-start;gap:11px;background:var(--surface);
+  border:1px solid var(--line);border-radius:14px;padding:13px 15px;box-shadow:var(--shadow-1);
+}
+.uava{
+  flex:none;width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:13px;
+}
+.ubody{flex:1;min-width:0}
+.uhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.uaddr{font-size:14.5px;font-weight:700;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.uwho{font-size:12.5px;color:var(--muted);font-weight:600}
+.utime{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;margin-inline-start:auto;flex:none}
+.unote{
+  margin-top:7px;font-size:13.5px;color:var(--ink-2);white-space:pre-wrap;line-height:1.55;
+  border-inline-start:3px solid var(--line-strong);padding-inline-start:11px;
 }
 
 .empty{
-  text-align:center;padding:52px 22px;color:var(--muted);
-  border:1px dashed var(--line-strong);border-radius:14px;margin-top:20px;background:var(--surface-2);
+  text-align:center;padding:56px 24px;color:var(--muted);
+  border:1px dashed var(--line-strong);border-radius:18px;margin-top:20px;background:var(--surface-2);
 }
-.empty strong{display:block;font-family:var(--font-display);font-size:21px;color:var(--ink-2);margin-bottom:6px}
-.empty .big{font-size:30px;display:block;margin-bottom:8px;color:var(--ok)}
-.foot{margin-top:30px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.6}
+.empty strong{display:block;font-family:var(--font-display);font-size:22px;color:var(--ink-2);margin-bottom:6px}
+.empty .big{font-size:34px;display:block;margin-bottom:10px;color:var(--ok)}
+.foot{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.6}
 
-@media (max-width:520px){
-  .app{padding:0 10px 64px}
-  .hero{padding:14px 15px;border-radius:12px}
-  .hero h2{font-size:20px}
-  .ring{width:50px;height:50px}
-  .row{padding:10px 13px 10px 10px}
+@media (max-width:560px){
+  .app{padding:0 12px 72px}
+  .stickytop{margin:0 -12px;padding:0 12px}
+  .today h2{font-size:22px}
+  .appbar{height:54px}
+  .row{padding:12px 13px 12px 10px}
+  .detail{padding:2px 16px 16px 16px}
+  .iconbtn{padding:0 8px}
+  .iconbtn .lbl2{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -391,7 +539,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 <body>
 <div class="gate" id="gate">
   <form class="gate-card" id="loginForm" autocomplete="on">
-    <div class="brand"><span class="tick"></span><h1>לוח הפולו־אפ</h1></div>
+    <div class="brand"><span class="tick">✦</span><h1>לוח הפולו־אפ</h1></div>
     <p class="gate-sub">משימות הפולו־אפ שלך, ישירות מהלוח.</p>
     <label class="field">
       <span>אימייל</span>
@@ -404,52 +552,72 @@ button,input,select,textarea{font:inherit;color:inherit}
     <label class="remember"><input type="checkbox" id="remember" checked> זכור אותי במכשיר הזה</label>
     <button class="btn" id="loginBtn" type="submit">כניסה</button>
     <div class="gate-msg" id="gateMsg" role="status" aria-live="polite"></div>
-    <p class="gate-note">התצוגה היא לקריאה בלבד. עדכון משימות נעשה במאנדיי.</p>
+    <p class="gate-note">סימון "בטיפול"/"בוצע" והערה נשמרים גם בלוח המשימות במאנדיי.</p>
   </form>
 </div>
 
 <div class="app" id="app" hidden>
-  <div class="topline">
-    <span class="mark">לוח הפולו־אפ</span>
-    <span class="who" id="who"></span>
-    <button class="linkbtn" id="toUpdates" type="button" hidden>עדכונים <span class="badge" id="uBadge">0</span></button>
-    <button class="linkbtn" id="toTasks" type="button" hidden>← למשימות</button>
-    <button class="linkbtn" id="logout" type="button">יציאה</button>
+  <div class="stickytop" id="stickytop">
+    <div class="appbar">
+      <span class="mark"><span class="dot">✦</span><span class="name">לוח הפולו־אפ</span></span>
+      <span class="who" id="who"></span>
+      <button class="iconbtn primary" id="toUpdates" type="button" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        <span class="lbl2">עדכונים</span><span class="badge" id="uBadge">0</span>
+      </button>
+      <button class="iconbtn" id="toTasks" type="button" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        <span class="lbl2">למשימות</span>
+      </button>
+      <button class="iconbtn" id="themeBtn" type="button" title="מצב כהה/בהיר" aria-label="מצב כהה או בהיר"></button>
+      <button class="iconbtn" id="logout" type="button" title="יציאה" aria-label="יציאה">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      </button>
+    </div>
+
+    <div class="toolbar" id="toolbar">
+      <div class="tbrow">
+        <div class="searchwrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input class="search" id="search" type="search" placeholder="חיפוש בכתובת, במשימה או ברקע…" aria-label="חיפוש">
+        </div>
+        <div class="seg" role="group" aria-label="מיון">
+          <button type="button" id="sortBoard" aria-pressed="true">סדר הלוח</button>
+          <button type="button" id="sortType" aria-pressed="false">סוג</button>
+        </div>
+        <label class="toggle" id="futureWrap" hidden><input type="checkbox" id="future"> עתידיות</label>
+      </div>
+      <div class="chiprow" id="filters" hidden></div>
+      <div class="chiprow" id="adminbarWrap" hidden><span class="barlabel" id="adminbarLabel">צוות</span><span class="chiprow" id="adminbar"></span></div>
+    </div>
   </div>
 
-  <section class="hero">
-    <div class="hero-row">
+  <section class="today" id="todayStrip">
+    <div class="today-row">
       <div>
         <p class="eyebrow" id="eyebrow"></p>
         <h2 id="viewTitle">המשימות שלי</h2>
       </div>
-      <div class="ring" id="ring" hidden></div>
+      <div class="pct" id="pct" hidden><b>0%</b><span>הושלמו</span></div>
     </div>
+    <div class="track" id="track" hidden><i style="width:0"></i></div>
     <div class="stats" id="stats"></div>
     <p class="synced" id="synced"></p>
   </section>
 
-  <div class="resumed" id="resumed" hidden></div>
-  <div class="viewing" id="viewing" hidden></div>
-
-  <div class="sticky">
-    <input class="search" id="search" type="search" placeholder="חיפוש בכתובת, במשימה או ברקע…" aria-label="חיפוש">
-    <p class="barlabel" id="adminbarLabel" hidden>צוות</p>
-    <div class="bar" id="adminbar" hidden></div>
-    <div class="filters" id="filters" hidden></div>
-    <div class="opts">
-      <span class="seglabel">מיון</span>
-      <div class="seg" role="group" aria-label="מיון">
-        <button type="button" id="sortBoard" aria-pressed="true">סדר הלוח</button>
-        <button type="button" id="sortType" aria-pressed="false">סוג משימה</button>
-      </div>
-      <label class="toggle" id="futureWrap" hidden><input type="checkbox" id="future"> כולל עתידיות</label>
-    </div>
-  </div>
+  <div class="banner" id="resumed" hidden></div>
+  <div class="banner accent" id="viewing" hidden></div>
 
   <div class="statusline" id="statusline"></div>
-  <div id="content"></div>
-  <div id="updatesView" hidden></div>
+
+  <div class="layout">
+    <div class="listcol">
+      <div id="content"></div>
+      <div id="updatesView" hidden></div>
+    </div>
+    <aside class="pane" id="pane" aria-live="polite"></aside>
+  </div>
+
   <p class="foot" id="foot"></p>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -531,6 +699,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   var view  = "tasks";
   var API   = "/api/updates";
   var MARKS_CACHE = "tb.marks";
+  var openId = null;     // המשימה הפתוחה — שורה מורחבת בטלפון, פאנל צדדי במחשב
   var clearedAt = 0;     // מנהל בלבד: חותם הזמן של "ניקוי" אחרון במסך העדכונים
   var history = [];      // מנהל בלבד: כל העדכונים שנרשמו אי פעם, גם אחרי ניקוי
   var updatesSub = "active"; // "active" | "history"
@@ -678,59 +847,75 @@ button,input,select,textarea{font:inherit;color:inherit}
   }
 
   function closePop(){
-    var open_ = document.querySelector(".stpop");
+    var open_ = document.querySelector(".sheet");
     if (open_) open_.remove();
     var bg = document.querySelector(".sheetbg");
     if (bg) bg.remove();
   }
-  document.addEventListener("click", function(e){
-    if (!e.target.closest(".stpop") && !e.target.closest(".st")) closePop();
-  });
   document.addEventListener("keydown", function(e){ if (e.key === "Escape") closePop(); });
 
+  // גיליון הסימון: חלון ממורכז במחשב, גיליון תחתון בטלפון. מחליף בחירה ואז שמירה,
+  // כדי שאפשר יהיה לכתוב את ההערה לפני ששולחים — ולא אחרי שכבר נשמר.
   function openPicker(row, t, btn){
     closePop();
     var cur = marks[t.id];
+    var picked = cur ? cur.status : null;
+
+    var bg = document.createElement("div");
+    bg.className = "sheetbg";
+    bg.addEventListener("click", closePop);
+    document.body.appendChild(bg);
+
     var pop = document.createElement("div");
-    pop.className = "stpop";
+    pop.className = "sheet";
+    pop.setAttribute("role", "dialog");
+    pop.setAttribute("aria-modal", "true");
     pop.innerHTML =
       "<h5>" + esc(t.addr) + "</h5>" +
-      '<div class="picks"><button type="button" class="w">בטיפול</button>' +
-      '<button type="button" class="d">בוצע</button></div>' +
-      '<textarea placeholder="הערה (לא חובה) — תופיע אצל ירין" maxlength="500"></textarea>' +
+      '<p class="sub">' + esc([t.city, t.type].filter(Boolean).join(" · ") || "סימון המשימה") + "</p>" +
+      '<div class="picks">' +
+        '<button type="button" class="w" aria-pressed="false"><span class="bub">●</span>בטיפול</button>' +
+        '<button type="button" class="d" aria-pressed="false"><span class="bub">✓</span>בוצע</button>' +
+      "</div>" +
+      (cur && cur.note
+        ? '<div class="lastnote"><b>ההערה הקודמת · ' + esc(cur.byName || "") + "</b>" + esc(cur.note) + "</div>"
+        : "") +
+      '<label class="lbl" for="noteBox">הערה — תיכנס גם ל"סטטוס הפרויקט" במאנדיי</label>' +
+      '<textarea id="noteBox" placeholder="מה קרה במשימה הזו?" maxlength="500"></textarea>' +
       '<div class="foot2">' +
-        (cur ? '<button type="button" class="clear">בטל סימון</button>' : "<span></span>") +
-        '<button type="button" class="close">סגירה</button>' +
+        '<button type="button" class="save" disabled>שמירה</button>' +
+        (cur ? '<button type="button" class="clear">בטל סימון</button>' : "") +
+        '<button type="button" class="close">ביטול</button>' +
       "</div>";
-    pop.addEventListener("click", function(e){ e.stopPropagation(); });
-    var ta = pop.querySelector("textarea");
-    if (cur && cur.note) ta.value = cur.note;
+    document.body.appendChild(pop);
 
-    pop.querySelector(".w").addEventListener("click", function(){
-      closePop(); setStatus(t.id, "בטיפול", ta.value, t.addr, btn);
-    });
-    pop.querySelector(".d").addEventListener("click", function(){
-      closePop(); setStatus(t.id, "בוצע", ta.value, t.addr, btn);
+    var ta = pop.querySelector("textarea");
+    var save = pop.querySelector(".save");
+    var wb = pop.querySelector(".w"), db = pop.querySelector(".d");
+
+    function paintPicks(){
+      wb.setAttribute("aria-pressed", String(picked === "בטיפול"));
+      db.setAttribute("aria-pressed", String(picked === "בוצע"));
+      save.disabled = !picked;
+      save.textContent = picked ? "שמירה · " + picked : "שמירה";
+    }
+    wb.addEventListener("click", function(){ picked = "בטיפול"; paintPicks(); ta.focus(); });
+    db.addEventListener("click", function(){ picked = "בוצע";   paintPicks(); ta.focus(); });
+    save.addEventListener("click", function(){
+      if (!picked) return;
+      closePop();
+      setStatus(t.id, picked, ta.value, t.addr, btn);
     });
     var cl = pop.querySelector(".clear");
     if (cl) cl.addEventListener("click", function(){ closePop(); setStatus(t.id, null, "", t.addr, btn); });
     pop.querySelector(".close").addEventListener("click", closePop);
+    // Ctrl/Cmd+Enter שומר מתוך תיבת ההערה
+    ta.addEventListener("keydown", function(e){
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") save.click();
+    });
 
-    if (window.matchMedia("(max-width:700px)").matches){
-      var bg = document.createElement("div");
-      bg.className = "sheetbg";
-      bg.addEventListener("click", closePop);
-      document.body.appendChild(bg);
-    }
-    row.appendChild(pop);
-    // אם אין מקום למטה, נפתח כלפי מעלה; ואם השורה מתחת לסרגל הדביק — מגלגלים אליה
-    var pr = pop.getBoundingClientRect();
-    var topbar = document.querySelector(".sticky").getBoundingClientRect().bottom;
-    if (pr.bottom > window.innerHeight - 8 && row.getBoundingClientRect().top - pr.height > topbar + 8){
-      pop.classList.add("up");
-    } else if (pop.getBoundingClientRect().top < topbar + 8){
-      row.scrollIntoView({ block: "center" });
-    }
+    paintPicks();
+    if (!window.matchMedia("(max-width:700px)").matches) (picked ? ta : wb).focus();
   }
 
   /* ---------- תצוגה ---------- */
@@ -748,15 +933,13 @@ button,input,select,textarea{font:inherit;color:inherit}
     // באותו דפדפן נשארות על המסך אצל משתמש רגיל.
     var bar = $("adminbar");
     bar.innerHTML = "";
-    bar.hidden = true;
-    $("adminbarLabel").hidden = true;
+    $("adminbarWrap").hidden = true;
     $("futureWrap").hidden = true;
     $("future").checked = false;
     showFuture = false;
 
     if (session.isAdmin){
-      bar.hidden = false;
-      $("adminbarLabel").hidden = false;
+      $("adminbarWrap").hidden = false;
       session.order.forEach(function(em){
         var b = document.createElement("button");
         b.type = "button"; b.className = "pill";
@@ -878,11 +1061,11 @@ button,input,select,textarea{font:inherit;color:inherit}
       timeZone:"Asia/Jerusalem", weekday:"long", day:"numeric", month:"long" }).format(new Date());
 
     var chips = '<span class="stat">משימות <b>' + pool.length + "</b></span>";
-    if (busy) chips += '<span class="stat">בטיפול <b>' + busy + "</b></span>";
+    if (busy) chips += '<span class="stat work">בטיפול <b>' + busy + "</b></span>";
     if (done) chips += '<span class="stat done">בוצעו <b>' + done + "</b></span>";
     $("stats").innerHTML = chips;
     $("synced").textContent = "עודכן מהלוח: " + DATA.syncedAt;
-    drawRing(done, pool.length);
+    drawProgress(done, pool.length);
 
     var box = $("content");
     box.innerHTML = "";
@@ -890,6 +1073,7 @@ button,input,select,textarea{font:inherit;color:inherit}
       box.innerHTML = query
         ? '<div class="empty"><strong>אין תוצאות לחיפוש</strong>נסו ניסוח אחר.</div>'
         : '<div class="empty"><span class="big">✓</span><strong>הכל נקי</strong>אין משימות פתוחות עד היום.</div>';
+      paintPane();
       return;
     }
 
@@ -918,6 +1102,7 @@ button,input,select,textarea{font:inherit;color:inherit}
       sec.appendChild(rows);
       box.appendChild(sec);
     });
+    paintPane();
   }
 
   async function clearUpdates(){
@@ -964,14 +1149,14 @@ button,input,select,textarea{font:inherit;color:inherit}
       var tools = document.createElement("div");
       tools.className = "utools";
       var histBtn = document.createElement("button");
-      histBtn.type = "button"; histBtn.className = "linkbtn";
-      histBtn.textContent = isHistory ? "← לעדכונים" : "היסטוריה";
+      histBtn.type = "button"; histBtn.className = "iconbtn";
+      histBtn.textContent = isHistory ? "← לעדכונים חדשים" : "היסטוריה מלאה";
       histBtn.addEventListener("click", function(){ updatesSub = isHistory ? "active" : "history"; renderAll(); });
       tools.appendChild(histBtn);
       if (!isHistory && list.length){
         var clearBtn = document.createElement("button");
-        clearBtn.type = "button"; clearBtn.className = "linkbtn";
-        clearBtn.textContent = "ניקוי";
+        clearBtn.type = "button"; clearBtn.className = "iconbtn primary";
+        clearBtn.textContent = "ניקוי (" + list.length + ")";
         clearBtn.addEventListener("click", clearUpdates);
         tools.appendChild(clearBtn);
       }
@@ -1000,35 +1185,134 @@ button,input,select,textarea{font:inherit;color:inherit}
         h.textContent = day;
         wrap.appendChild(h);
       }
-      var c = DATA.types[u.status] || null;
+      var who = u.byName || "—";
       var bg = u.status === "בוצע" ? "#00c875" : "#fdab3d";
       var el = document.createElement("div");
       el.className = "uitem";
       el.innerHTML =
-        '<span class="chip" style="background:' + bg + ';color:#1d2129">' + esc(u.status) + "</span>" +
-        '<span class="uwho">' + esc(u.byName || "—") + "</span>" +
-        '<span class="uaddr">' + esc(u.addr || u.taskId) + "</span>" +
-        '<span class="utime">' + timeLabel(u.at) + "</span>" +
-        (u.note ? '<span class="unote">' + esc(u.note) + "</span>" : "");
+        '<span class="uava">' + esc(who.slice(0, 1)) + "</span>" +
+        '<div class="ubody">' +
+          '<div class="uhead">' +
+            '<span class="uaddr">' + esc(u.addr || u.taskId) + "</span>" +
+            '<span class="chip" style="background:' + bg + ';color:#1d2129">' + esc(u.status) + "</span>" +
+            '<span class="utime">' + esc(who) + " · " + timeLabel(u.at) + "</span>" +
+          "</div>" +
+          (u.note ? '<div class="unote">' + esc(u.note) + "</div>" : "") +
+        "</div>";
       wrap.appendChild(el);
     });
     box.appendChild(wrap);
+    paintPane();
   }
 
-  function drawRing(done, total){
-    var el = $("ring");
-    if (!statusOn || !total || !done){ el.hidden = true; return; }
-    el.hidden = false;
-    var pct = Math.round((done / total) * 100), R = 24, C = 2 * Math.PI * R;
-    el.innerHTML =
-      '<svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true">' +
-        '<circle cx="28" cy="28" r="' + R + '" fill="none" stroke="var(--line)" stroke-width="5"></circle>' +
-        '<circle cx="28" cy="28" r="' + R + '" fill="none" stroke="var(--ok)" stroke-width="5"' +
-          ' stroke-linecap="round" stroke-dasharray="' + C.toFixed(1) + '"' +
-          ' stroke-dashoffset="' + (C * (1 - done / total)).toFixed(1) + '"></circle>' +
-      "</svg>" +
-      '<span class="val">' + pct + "%</span>";
-    el.title = done + " מתוך " + total + " סומנו כבוצעו";
+  function drawProgress(done, total){
+    var pctEl = $("pct"), trackEl = $("track");
+    if (!statusOn || !total || !done){ pctEl.hidden = true; trackEl.hidden = true; return; }
+    var pct = Math.round((done / total) * 100);
+    pctEl.hidden = false; trackEl.hidden = false;
+    pctEl.querySelector("b").textContent = pct + "%";
+    trackEl.querySelector("i").style.width = pct + "%";
+    trackEl.title = done + " מתוך " + total + " סומנו כבוצעו";
+  }
+
+  /* ---------- פירוט המשימה ---------- */
+  var PHONE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>';
+
+  function phonesIn(s){
+    var found = String(s || "").match(RE_PHONE) || [];
+    var seen = {}, out = [];
+    found.forEach(function(p){
+      var k = p.replace(/\D/g, "");
+      if (!seen[k]){ seen[k] = 1; out.push(p.trim()); }
+    });
+    return out;
+  }
+  function firstPhone(t){
+    var p = phonesIn(t.notes);
+    return p.length ? p[0] : (phonesIn(t.desc)[0] || null);
+  }
+
+  // "סטטוס הפרויקט" במאנדיי הוא יומן מתוארך (יום.חודש ואז הטקסט, בלוקים מופרדים
+  // בשורה ריקה). מפרקים אותו לרשומות ומציגים כטיימליין, החדש למעלה.
+  var RE_DATELINE = /^\s*(\d{1,2}\.\d{1,2}(?:\.\d{2,4})?)\s*$/;
+  function timelineHTML(text){
+    var blocks = String(text).split(/\n\s*\n+/).map(function(b){ return b.replace(/\s+$/, ""); })
+                             .filter(function(b){ return b.trim(); });
+    var items = blocks.map(function(b){
+      var lines = b.split("\n");
+      var m = lines[0].match(RE_DATELINE);
+      if (m) return { date: m[1], body: lines.slice(1).join("\n").trim() };
+      // שורה שמתחילה בתאריך ואחריו טקסט באותה שורה
+      var inline = lines[0].match(/^\s*(\d{1,2}\.\d{1,2}(?:\.\d{2,4})?)\s+(.+)$/);
+      if (inline) return { date: inline[1], body: [inline[2]].concat(lines.slice(1)).join("\n").trim() };
+      return { date: "", body: b.trim() };
+    }).filter(function(it){ return it.date || it.body; });
+
+    if (!items.length) return "";
+    items.reverse();                                  // החדש ביותר ראשון
+    return '<ul class="tl">' + items.map(function(it, i){
+      return '<li class="tl-item' + (i === 0 && it.date ? " newest" : "") + '">' +
+               '<span class="tl-dot"></span>' +
+               (it.date ? '<div class="tl-date">' + esc(it.date) + "</div>" : "") +
+               '<div class="tl-body">' + richText(it.body) + "</div>" +
+             "</li>";
+    }).join("") + "</ul>";
+  }
+
+  function detailHTML(t){
+    var html = "";
+    if (t.desc) html += '<div class="dsec"><h4>המשימה</h4><p class="dtask">' + esc(t.desc) + "</p></div>";
+
+    var tels = phonesIn(t.notes).concat(phonesIn(t.desc)).slice(0, 6);
+    var seen = {};
+    tels = tels.filter(function(p){ var k = p.replace(/\D/g,""); if (seen[k]) return false; seen[k] = 1; return true; });
+    if (t.notes || tels.length){
+      html += '<div class="dsec"><h4>אנשי קשר</h4>';
+      if (tels.length){
+        html += '<div class="tels">' + tels.map(function(p){
+          return '<a class="telchip" href="tel:' + p.replace(/\D/g, "") + '">' + PHONE_ICON + "<span>" + esc(p) + "</span></a>";
+        }).join("") + "</div>";
+      }
+      if (t.notes) html += '<p class="dbox">' + richText(t.notes) + "</p>";
+      html += "</div>";
+    }
+
+    if (t.pstatus){
+      var tl = timelineHTML(t.pstatus);
+      html += '<div class="dsec"><h4>סטטוס הפרויקט</h4>' +
+              (tl || '<p class="dbox">' + richText(t.pstatus) + "</p>") + "</div>";
+    }
+    return html;
+  }
+
+  function findTask(id){
+    var sets = session ? session.sets : {};
+    for (var k in sets){
+      var list = sets[k].tasks || [];
+      for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    }
+    return null;
+  }
+
+  // הפאנל הצדדי במחשב — מציג את המשימה שנבחרה, כדי לא לדחוף את הרשימה למטה
+  function paintPane(){
+    var pane = $("pane");
+    if (!pane) return;
+    pane.style.display = (view === "tasks") ? "" : "none";
+    var t = openId ? findTask(openId) : null;
+    if (!t || view !== "tasks"){
+      pane.innerHTML = '<div class="pane-empty"><span class="ico">✦</span>בחרו משימה מהרשימה כדי לראות את הפרטים, אנשי הקשר והיומן שלה.</div>';
+      return;
+    }
+    var mk = marks[t.id];
+    var c = t.type ? DATA.types[t.type] : null;
+    pane.innerHTML =
+      '<div class="pane-head"><div>' +
+        "<h3>" + esc(t.addr) + "</h3>" +
+        '<p class="pane-city">' + esc([t.city, mk ? mk.status : ""].filter(Boolean).join(" · ")) + "</p>" +
+      "</div>" +
+      (t.type ? '<span class="chip"' + (c ? ' style="background:' + c.bg + ';color:' + c.fg + '"' : "") + ">" + esc(t.type) + "</span>" : "") +
+      "</div>" + detailHTML(t);
   }
 
   function addRow(container, t){
@@ -1036,10 +1320,11 @@ button,input,select,textarea{font:inherit;color:inherit}
     var has = !!(t.desc || t.notes || t.pstatus);
 
     var row = document.createElement("div");
-    row.className = "row";
+    row.className = "row" + (mk ? (mk.status === "בוצע" ? " is-done" : " is-work") : "") +
+                    (openId === t.id ? " open" : "");
     row.tabIndex = 0;
     row.setAttribute("role", "button");
-    row.setAttribute("aria-expanded", "false");
+    row.setAttribute("aria-expanded", String(openId === t.id));
 
     // עיגול הסימון — הפעולה העיקרית, יעד מגע מלא
     var stb = document.createElement("button");
@@ -1071,34 +1356,49 @@ button,input,select,textarea{font:inherit;color:inherit}
                : '<span class="chip">' + esc(t.type) + "</span>";
     }
 
+    var tel = firstPhone(t);
     main.innerHTML =
       '<div class="rline">' +
         '<span class="addr">' + esc(t.addr) + "</span>" +
         (t.city ? '<span class="city">' + esc(t.city) + "</span>" : "") +
-        chip +
-        (dTxt ? '<span class="date">' + esc(dTxt) + "</span>" : "") +
+        '<span class="rside">' + chip + (dTxt ? '<span class="date">' + esc(dTxt) + "</span>" : "") + "</span>" +
       "</div>" +
       (t.desc ? '<div class="rprev">' + esc(oneLine(t.desc)) + "</div>" : "");
     row.appendChild(main);
 
-    if (t.desc) {
-      var pop = document.createElement("div");
-      pop.className = "pop";
-      pop.textContent = t.desc;
-      row.appendChild(pop);
+    // חיוג בנגיעה אחת — הפעולה הכי שכיחה בשטח, בלי להיכנס לפרטי המשימה
+    if (tel){
+      var call = document.createElement("a");
+      call.className = "callbtn";
+      call.href = "tel:" + tel.replace(/\D/g, "");
+      call.title = "חיוג ל-" + tel;
+      call.setAttribute("aria-label", "חיוג ל-" + tel);
+      call.innerHTML = PHONE_ICON;
+      call.addEventListener("click", function(e){ e.stopPropagation(); });
+      row.appendChild(call);
     }
 
     var detail = document.createElement("div");
     detail.className = "detail";
-    var html = t.desc ? '<p class="task-desc">' + esc(t.desc) + "</p>" : "";
-    if (t.pstatus) html += '<div class="bgsec"><h4>סטטוס הפרויקט</h4><p>' + richText(t.pstatus) + "</p></div>";
-    if (t.notes)   html += '<div class="bgsec"><h4>תיאור ואנשי קשר</h4><p>' + richText(t.notes) + "</p></div>";
-    detail.innerHTML = html;
+    if (openId === t.id) detail.innerHTML = detailHTML(t);
 
     function toggle(){
       if (!has) return;
-      var open = row.classList.toggle("open");
-      row.setAttribute("aria-expanded", String(open));
+      var wasOpen = openId === t.id;
+      openId = wasOpen ? null : t.id;
+      // עדכון נקודתי בלי רינדור מחדש — כדי לא לאבד את מיקום הגלילה
+      var all = document.querySelectorAll(".row.open");
+      for (var i = 0; i < all.length; i++){
+        all[i].classList.remove("open");
+        all[i].setAttribute("aria-expanded", "false");
+        if (all[i].nextElementSibling) all[i].nextElementSibling.innerHTML = "";
+      }
+      if (!wasOpen){
+        row.classList.add("open");
+        row.setAttribute("aria-expanded", "true");
+        detail.innerHTML = detailHTML(t);
+      }
+      paintPane();
     }
     row.addEventListener("click", toggle);
     row.addEventListener("keydown", function(e){
@@ -1130,31 +1430,68 @@ button,input,select,textarea{font:inherit;color:inherit}
   $("toTasks").addEventListener("click",   function(){ view = "tasks";   renderAll(); });
   $("logout").addEventListener("click", function(){
     session = null; marks = {}; view = "tasks"; autoResumed = false; forget();
-    clearedAt = 0; history = []; updatesSub = "active";
+    clearedAt = 0; history = []; updatesSub = "active"; openId = null;
     $("resumed").hidden = true;
     $("viewing").hidden = true;
-    $("adminbar").innerHTML = ""; $("adminbar").hidden = true; $("adminbarLabel").hidden = true;
+    $("adminbar").innerHTML = ""; $("adminbarWrap").hidden = true;
     $("futureWrap").hidden = true; $("future").checked = false; showFuture = false;
     $("toUpdates").hidden = true; $("toTasks").hidden = true;
     $("search").value = ""; query = ""; statusFilter = "all";
     $("filters").innerHTML = ""; $("filters").hidden = true;
-    $("content").innerHTML = ""; $("updatesView").innerHTML = "";
-    $("stats").innerHTML = ""; $("ring").hidden = true;
+    $("content").innerHTML = ""; $("updatesView").innerHTML = ""; $("pane").innerHTML = "";
+    $("stats").innerHTML = ""; $("pct").hidden = true; $("track").hidden = true;
     try { localStorage.removeItem(MARKS_CACHE); } catch (_){}
     $("app").hidden = true; $("gate").hidden = false;
     $("pass").value = ""; $("gateMsg").textContent = "";
   });
 
-  // גובה הסרגל הדביק משתנה (מנהל רואה שורת בעלים נוספת, שורת הפילטרים מופיעה/נעלמת) —
-  // כותרות הקבוצות נעוגנות אליו דינמית כדי שלא יתנגשו איתו בגלילה.
-  var stickyEl = document.querySelector(".sticky");
+  /* ---------- מצב כהה/בהיר ---------- */
+  var THEME_KEY = "tb.theme";
+  var SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>';
+  var MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+  function sysDark(){ return window.matchMedia("(prefers-color-scheme: dark)").matches; }
+  function isDark(){
+    var t = document.documentElement.getAttribute("data-theme");
+    return t ? t === "dark" : sysDark();
+  }
+  function paintTheme(){ $("themeBtn").innerHTML = isDark() ? SUN : MOON; }
+  try {
+    var savedTheme = localStorage.getItem(THEME_KEY);
+    if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+  } catch (_){}
+  paintTheme();
+  $("themeBtn").addEventListener("click", function(){
+    var next = isDark() ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem(THEME_KEY, next); } catch (_){}
+    paintTheme();
+  });
+
+  // גובה הסרגל הדביק משתנה (מנהל רואה שורת צוות נוספת, שורת הפילטרים מופיעה/נעלמת) —
+  // כותרות הקבוצות והפאנל נעגנים אליו דינמית כדי שלא יתנגשו איתו בגלילה.
+  var stickyEl = $("stickytop");
   function syncStickyH(){ document.documentElement.style.setProperty("--sticky-h", stickyEl.offsetHeight + "px"); }
   if (window.ResizeObserver) new ResizeObserver(syncStickyH).observe(stickyEl);
   else { window.addEventListener("resize", syncStickyH); syncStickyH(); }
 
+  // צל עדין מתחת לסרגל רק אחרי שמתחילים לגלול
+  addEventListener("scroll", function(){
+    stickyEl.classList.toggle("scrolled", window.scrollY > 4);
+  }, { passive: true });
+
+  // קיצורי מקלדת במחשב: "/" לחיפוש, Esc לניקוי החיפוש
+  addEventListener("keydown", function(e){
+    if (e.key === "/" && document.activeElement !== $("search") &&
+        !/^(INPUT|TEXTAREA)$/.test((document.activeElement || {}).tagName || "")){
+      e.preventDefault(); $("search").focus(); $("search").select();
+    } else if (e.key === "Escape" && document.activeElement === $("search") && $("search").value){
+      $("search").value = ""; query = ""; renderAll();
+    }
+  });
+
   $("foot").textContent =
-    "הנתונים נשלפים מלוח המשימות ומוצגים לקריאה בלבד — שינוי סטטוס או תוכן נעשה בלוח עצמו. " +
-    "מוצגות משימות שתאריך הפולו־אפ שלהן הוא היום או קודם לכן.";
+    "המשימות נשלפות מלוח המשימות במאנדיי. סימון \"בטיפול\"/\"בוצע\" והערה נשמרים כאן וגם נכתבים " +
+    "חזרה למאנדיי. מוצגות משימות שתאריך הפולו־אפ שלהן הוא היום או קודם לכן.";
 
   resume();
 })();
