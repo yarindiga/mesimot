@@ -80,6 +80,7 @@ export default async (req) => {
 
     const { blobs } = await store.list();
     const updates = [];
+    const allMarks = [];
     const logKeys = [];
     let clearedAt = 0;
     for (const b of blobs) {
@@ -102,7 +103,9 @@ export default async (req) => {
       if (b.key.startsWith("_log_")) { logKeys.push(b.key); continue; }
       const rec = await store.get(b.key, { type: "json" });
       if (!rec) continue;
-      if (who.admin || rec.byId === who.id) updates.push({ taskId: b.key, ...rec });
+      const item = { taskId: b.key, ...rec };
+      allMarks.push(item);
+      if (who.admin || rec.byId === who.id) updates.push(item);
     }
     updates.sort((a, b) => (b.at || 0) - (a.at || 0));
     const resp = { updates };
@@ -110,7 +113,14 @@ export default async (req) => {
     if (who.admin) {
       resp.clearedAt = clearedAt;
       const history = (await Promise.all(logKeys.map((k) => store.get(k, { type: "json" })))).filter(Boolean);
-      resp.history = history.sort((a, b) => (b.at || 0) - (a.at || 0));
+
+      // השלמה: סימון שקיים אבל אין לו רישום בלוג (נוצר לפני שהלוג היה קיים, או אבד
+      // בבאג הדריסה הישן) נכנס להיסטוריה עכשיו — עם ההערה שנכתבה — ונשמר לתמיד.
+      const logged = new Set(history.map((h) => h.taskId + "_" + h.at));
+      const missing = allMarks.filter((m) => !logged.has(m.taskId + "_" + m.at));
+      for (const m of missing) await store.setJSON(`_log_${m.at}_${m.taskId}`, m);
+
+      resp.history = history.concat(missing).sort((a, b) => (b.at || 0) - (a.at || 0));
     }
     return json(resp);
   }
