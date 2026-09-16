@@ -1239,7 +1239,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 
   function cleanTokens(seg){
     var raw = String(seg || "")
-      .replace(/[‎‏‪-‮⁦-⁩]/g, "")
+      .replace(/[​-‏⁠‪-‮⁦-⁩﻿]/g, "")  // תווי כיווניות בלתי-נראים
       .replace(/["'״׳]/g, "")                       // בלי רווח: סה"כ -> סהכ, עו"ד -> עוד
       .replace(/[()\[\]{},;:.\-–—_|*+]+/g, " ")
       .trim();
