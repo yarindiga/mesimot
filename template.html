@@ -1240,7 +1240,8 @@ button,input,select,textarea{font:inherit;color:inherit}
   function cleanTokens(seg){
     var raw = String(seg || "")
       .replace(/[‎‏‪-‮⁦-⁩]/g, "")
-      .replace(/[()\[\]{}"'״׳,;:.\-–—_|*+]+/g, " ")
+      .replace(/["'״׳]/g, "")                       // בלי רווח: סה"כ -> סהכ, עו"ד -> עוד
+      .replace(/[()\[\]{},;:.\-–—_|*+]+/g, " ")
       .trim();
     var kept = [];
     raw.split(/\s+/).forEach(function(tk, i){
@@ -1264,23 +1265,33 @@ button,input,select,textarea{font:inherit;color:inherit}
   }
 
   function contactsIn(text){
-    var lines = String(text || "").split("\n"), out = [], seen = {};
+    var lines = String(text || "").split("\n"), out = [], idx = {};
     lines.forEach(function(line, li){
       var re = new RegExp(RE_PHONE.source, "g"), m;
       while ((m = re.exec(line))){
         var tel = m[0].trim(), key = tel.replace(/\D/g, "");
-        if (key.length < 9 || seen[key]) continue;
-        seen[key] = 1;
+        if (key.length < 9) continue;
+        // שם מאותה שורה הוא ודאי; שם משורה קודמת הוא ניחוש
         var name = pickName(line.slice(0, m.index), true) ||
                    pickName(line.slice(m.index + m[0].length), false);
-        if (!name){                                   // המספר לבדו בשורה — מסתכלים שורה למעלה
-          for (var k = li - 1; k >= 0; k--){
+        var strong = !!name;
+        if (!name){                       // המספר לבדו בשורה — מטפסים עד 3 שורות למעלה
+          for (var k = li - 1, hops = 0; k >= 0 && hops < 3; k--){
             if (!lines[k].trim()) continue;
-            if (!RE_PHONE_ONE.test(lines[k])) name = pickName(lines[k], false);
-            break;
+            hops++;
+            if (RE_PHONE_ONE.test(lines[k])) break;   // כבר שורה של איש קשר אחר
+            name = pickName(lines[k], false);
+            if (name) break;
           }
         }
-        out.push({ tel: tel, name: name || "" });
+        var prev = idx[key];
+        if (prev){                        // אותו מספר שוב — משדרגים רק אם עכשיו יש שם ודאי
+          if (strong && !prev.strong){ prev.name = name; prev.strong = true; }
+          continue;
+        }
+        var rec = { tel: tel, name: name || "", strong: strong };
+        idx[key] = rec;
+        out.push(rec);
       }
     });
     return out;
@@ -1325,7 +1336,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     var seen = {};
     var tels = contactsIn(t.notes).concat(contactsIn(t.desc)).filter(function(c){
       var k = c.tel.replace(/\D/g, ""); if (seen[k]) return false; seen[k] = 1; return true;
-    });
+    }).slice(0, 10);   // בבניינים עם עשרות דיירים — כל המספרים ממילא בטקסט שמתחת
     if (t.notes || tels.length){
       html += '<div class="dsec"><h4>אנשי קשר</h4>';
       if (tels.length){
