@@ -526,6 +526,11 @@ button,input,select,textarea{font:inherit;color:inherit}
 .empty .big{font-size:34px;display:block;margin-bottom:10px;color:var(--ok)}
 .foot{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.6}
 
+@media (max-width:620px){
+  /* בטלפון החיפוש מקבל שורה משלו — אחרת הוא נדחס מול המיון ו"עתידיות" */
+  .tbrow{flex-wrap:wrap}
+  .searchwrap{flex:1 0 100%}
+}
 @media (max-width:560px){
   .app{padding:0 12px 72px}
   .stickytop{margin:0 -12px;padding:0 12px}
@@ -564,11 +569,11 @@ button,input,select,textarea{font:inherit;color:inherit}
     <div class="appbar">
       <span class="mark"><span class="dot">✦</span><span class="name">לוח הפולו־אפ</span></span>
       <span class="who" id="who"></span>
-      <button class="iconbtn primary" id="toUpdates" type="button" hidden>
+      <button class="iconbtn primary" id="toUpdates" type="button" hidden title="עדכונים מהצוות" aria-label="עדכונים מהצוות">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
         <span class="lbl2">עדכונים</span><span class="badge" id="uBadge">0</span>
       </button>
-      <button class="iconbtn" id="toTasks" type="button" hidden>
+      <button class="iconbtn" id="toTasks" type="button" hidden title="חזרה למשימות" aria-label="חזרה למשימות">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
         <span class="lbl2">למשימות</span>
       </button>
