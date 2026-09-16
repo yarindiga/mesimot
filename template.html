@@ -1039,6 +1039,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 
     $("content").hidden = false;
     $("updatesView").hidden = true;
+    $("toolbar").hidden = false;
     var mine = (active === session.meId);
     $("viewTitle").textContent = mine ? "המשימות שלי" : "משימות · " + labelOf(active);
 
@@ -1144,6 +1145,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     $("viewing").hidden = true;
     $("statusline").innerHTML = "";
     $("content").hidden = true;
+    $("toolbar").hidden = true;      // חיפוש/מיון/צוות לא רלוונטיים במסך העדכונים
     var box = $("updatesView");
     box.hidden = false;
     box.innerHTML = "";
