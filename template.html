@@ -402,9 +402,10 @@ button,input,select,textarea{font:inherit;color:inherit}
 .telchip{
   display:inline-flex;align-items:center;gap:7px;text-decoration:none;
   background:var(--accent-soft);color:var(--accent);border-radius:999px;
-  padding:6px 13px 6px 10px;font-size:13px;font-weight:700;direction:ltr;
+  padding:6px 13px 6px 10px;font-size:13px;font-weight:700;
   font-variant-numeric:tabular-nums;transition:filter .15s,transform .12s;
 }
+.telchip.num{direction:ltr}
 .telchip svg{width:14px;height:14px}
 .telchip:hover{filter:brightness(.96)}
 .telchip:active{transform:scale(.96)}
@@ -1228,18 +1229,66 @@ button,input,select,textarea{font:inherit;color:inherit}
   /* ---------- פירוט המשימה ---------- */
   var PHONE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>';
 
-  function phonesIn(s){
-    var found = String(s || "").match(RE_PHONE) || [];
-    var seen = {}, out = [];
-    found.forEach(function(p){
-      var k = p.replace(/\D/g, "");
-      if (!seen[k]){ seen[k] = 1; out.push(p.trim()); }
+  /* --- זיהוי שם בעל הטלפון ---
+     השדה "תיאור + טלפונים" נכתב חופשי, ובפועל השם יושב באחד משלושה מקומות:
+     לפני המספר ("מוטי 050-531-0253"), אחריו ("052-6557114 אניטה שדה"),
+     או בשורה שמעליו ("שי לוי נציג סטפן וייז 10" ואז המספר בשורה נפרדת).
+     מנקים מילות רקע (ועד/נציג/נייד/דירה...) ולוקחים את מה שנשאר ליד המספר. */
+  var RE_PHONE_ONE = new RegExp(RE_PHONE.source);
+  var NOISE = /^(ועד|הועד|וועד|נציג|נציגה|נציגים|הנציג|הנציגה|נציגות|נייד|טלפון|טל|מס|מספר|דירה|דירת|הדירה|דירות|קומה|מקומה|בעל|בעלת|בעלי|בשכירות|שוכר|שוכרת|שוכרים|משכיר|משכירה|של|את|עם|גם|וגם|או|אבל|לקחתי|קיבלנו|קיבלתי|הביא|הביאה|הביאו|מהשכן|מהשוכר|מהשכנים|אשתו|בעלה|הבן|הבת|אחותו|אחיו|חמתו|חמותה|עו|עוד|עורך|עורכת|דין|כניסה|בניין|סהכ|דיירים|יחד|לא|כן|הוא|היא|אין|יש|וגם|דרך|לפי|בבית|מטעמי|דופלקס|פנטהאוז|גג|חנות|מסחר|נכס|הנכס|בית|הבית|משפחת|מעוניין|מעוניינת|מעוניינים|מתנגד|מתנגדת|חתם|חתמה|חתמו|בעד|נגד)$/;
+
+  function cleanTokens(seg){
+    var raw = String(seg || "")
+      .replace(/[‎‏‪-‮⁦-⁩]/g, "")
+      .replace(/[()\[\]{}"'״׳,;:.\-–—_|*+]+/g, " ")
+      .trim();
+    var kept = [];
+    raw.split(/\s+/).forEach(function(tk, i){
+      if (!/[A-Za-z֐-׿]/.test(tk)) return;          // מספרים וסימנים
+      if (tk.length < 2) return;
+      if (/^ד\d+$/.test(tk) || /^תתח?\d*$/.test(tk) || /^ק\d*$/.test(tk)) return;
+      if (NOISE.test(tk)) return;
+      kept.push({ t: tk, i: i });
+    });
+    return { kept: kept, len: raw.length };
+  }
+
+  function pickName(seg, fromEnd){
+    var r = cleanTokens(seg);
+    if (!r.kept.length) return "";
+    var a = fromEnd ? r.kept[r.kept.length - 2] : r.kept[0];
+    var b = fromEnd ? r.kept[r.kept.length - 1] : r.kept[1];
+    // שתי מילים רק כשהן צמודות ובקטע קצר — אחרת זו כבר שורת תיאור, לא שם
+    if (r.len <= 28 && a && b && Math.abs(a.i - b.i) === 1) return a.t + " " + b.t;
+    return (fromEnd ? r.kept[r.kept.length - 1] : r.kept[0]).t;
+  }
+
+  function contactsIn(text){
+    var lines = String(text || "").split("\n"), out = [], seen = {};
+    lines.forEach(function(line, li){
+      var re = new RegExp(RE_PHONE.source, "g"), m;
+      while ((m = re.exec(line))){
+        var tel = m[0].trim(), key = tel.replace(/\D/g, "");
+        if (key.length < 9 || seen[key]) continue;
+        seen[key] = 1;
+        var name = pickName(line.slice(0, m.index), true) ||
+                   pickName(line.slice(m.index + m[0].length), false);
+        if (!name){                                   // המספר לבדו בשורה — מסתכלים שורה למעלה
+          for (var k = li - 1; k >= 0; k--){
+            if (!lines[k].trim()) continue;
+            if (!RE_PHONE_ONE.test(lines[k])) name = pickName(lines[k], false);
+            break;
+          }
+        }
+        out.push({ tel: tel, name: name || "" });
+      }
     });
     return out;
   }
-  function firstPhone(t){
-    var p = phonesIn(t.notes);
-    return p.length ? p[0] : (phonesIn(t.desc)[0] || null);
+
+  function firstContact(t){
+    var c = contactsIn(t.notes);
+    return c.length ? c[0] : (contactsIn(t.desc)[0] || null);
   }
 
   // "סטטוס הפרויקט" במאנדיי הוא יומן מתוארך (יום.חודש ואז הטקסט, בלוקים מופרדים
@@ -1273,14 +1322,18 @@ button,input,select,textarea{font:inherit;color:inherit}
     var html = "";
     if (t.desc) html += '<div class="dsec"><h4>המשימה</h4><p class="dtask">' + esc(t.desc) + "</p></div>";
 
-    var tels = phonesIn(t.notes).concat(phonesIn(t.desc)).slice(0, 6);
     var seen = {};
-    tels = tels.filter(function(p){ var k = p.replace(/\D/g,""); if (seen[k]) return false; seen[k] = 1; return true; });
+    var tels = contactsIn(t.notes).concat(contactsIn(t.desc)).filter(function(c){
+      var k = c.tel.replace(/\D/g, ""); if (seen[k]) return false; seen[k] = 1; return true;
+    });
     if (t.notes || tels.length){
       html += '<div class="dsec"><h4>אנשי קשר</h4>';
       if (tels.length){
-        html += '<div class="tels">' + tels.map(function(p){
-          return '<a class="telchip" href="tel:' + p.replace(/\D/g, "") + '">' + PHONE_ICON + "<span>" + esc(p) + "</span></a>";
+        html += '<div class="tels">' + tels.map(function(c){
+          var label = c.name || c.tel;
+          return '<a class="telchip' + (c.name ? "" : " num") + '" href="tel:' + c.tel.replace(/\D/g, "") + '"' +
+                 ' title="' + esc(c.name ? c.name + " · " + c.tel : c.tel) + '"' +
+                 ' aria-label="חיוג ל-' + esc(label) + '">' + PHONE_ICON + "<span>" + esc(label) + "</span></a>";
         }).join("") + "</div>";
       }
       if (t.notes) html += '<p class="dbox">' + richText(t.notes) + "</p>";
@@ -1366,7 +1419,7 @@ button,input,select,textarea{font:inherit;color:inherit}
                : '<span class="chip">' + esc(t.type) + "</span>";
     }
 
-    var tel = firstPhone(t);
+    var tel = firstContact(t);
     main.innerHTML =
       '<div class="rline">' +
         '<span class="addr">' + esc(t.addr) + "</span>" +
@@ -1378,11 +1431,12 @@ button,input,select,textarea{font:inherit;color:inherit}
 
     // חיוג בנגיעה אחת — הפעולה הכי שכיחה בשטח, בלי להיכנס לפרטי המשימה
     if (tel){
+      var who = tel.name ? tel.name + " · " + tel.tel : tel.tel;
       var call = document.createElement("a");
       call.className = "callbtn";
-      call.href = "tel:" + tel.replace(/\D/g, "");
-      call.title = "חיוג ל-" + tel;
-      call.setAttribute("aria-label", "חיוג ל-" + tel);
+      call.href = "tel:" + tel.tel.replace(/\D/g, "");
+      call.title = "חיוג ל-" + who;
+      call.setAttribute("aria-label", "חיוג ל-" + who);
       call.innerHTML = PHONE_ICON;
       call.addEventListener("click", function(e){ e.stopPropagation(); });
       row.appendChild(call);
