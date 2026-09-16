@@ -256,8 +256,6 @@ button,input,select,textarea{font:inherit;color:inherit}
     background:var(--surface);border:1px solid var(--line);border-radius:16px;
     box-shadow:var(--shadow-1);padding:20px;scrollbar-width:thin;
   }
-  .row.open + .detail{display:none}
-  .row.open{background:var(--accent-soft)}
 }
 .pane-empty{text-align:center;color:var(--muted);font-size:13.5px;padding:34px 10px}
 .pane-empty .ico{font-size:26px;display:block;margin-bottom:8px;opacity:.55}
@@ -356,6 +354,11 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 .detail{display:none;padding:2px 26px 18px 50px;background:var(--hover);border-top:1px solid var(--line)}
 .row.open + .detail{display:block}
+/* במסך רחב הפירוט חי בפאנל הצדדי בלבד — חייב לבוא אחרי הכלל שמעליו, אחרת הוא מפסיד לו */
+@media (min-width:1080px){
+  .row.open + .detail{display:none}
+  .row.open{background:var(--accent-soft)}
+}
 
 /* ---- תוכן הפירוט (משותף לפאנל ולשורה) ---- */
 .dsec{margin-top:16px}
