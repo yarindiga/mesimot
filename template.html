@@ -953,7 +953,7 @@ button,input,select,textarea{font:inherit;color:inherit}
         b.type = "button"; b.className = "pill";
         b.setAttribute("aria-pressed", String(em === active));
         b.innerHTML = esc(labelOf(em)) + ' <span class="n">' + countVisible(em) + "</span>";
-        b.addEventListener("click", function(){ active = em; view = "tasks"; renderAll(); });
+        b.addEventListener("click", function(){ active = em; view = "tasks"; openId = null; renderAll(); });
         bar.appendChild(b);
       });
       $("futureWrap").hidden = false;
