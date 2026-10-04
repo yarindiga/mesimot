@@ -738,7 +738,6 @@ button,input,select,textarea{font:inherit;color:inherit}
   var API   = "/api/updates";
   var REFRESH_API = "/api/refresh";
   var MARKS_CACHE = "tb.marks";
-  var REFRESH_CACHE = "tb.refresh";
   var openId = null;     // המשימה הפתוחה — שורה מורחבת בטלפון, פאנל צדדי במחשב
   var clearedAt = 0;     // מנהל בלבד: חותם הזמן של "ניקוי" אחרון במסך העדכונים
   var history = [];      // מנהל בלבד: כל העדכונים שנרשמו אי פעם, גם אחרי ניקוי
@@ -811,7 +810,6 @@ button,input,select,textarea{font:inherit;color:inherit}
 
     session = { meId: me, isAdmin: !!sets[me].admin, sets: sets, order: order };
     active  = me;
-    if (session.isAdmin) applyCachedRefresh();
     enterApp();
   }
 
@@ -845,26 +843,6 @@ button,input,select,textarea{font:inherit;color:inherit}
     try { marks = JSON.parse(localStorage.getItem(MARKS_CACHE) || "{}") || {}; } catch (_){ marks = {}; }
   }
 
-  // שומר את תוצאת הרענון החי האחרון (רק למנהל) כדי שתישאר אחרי יציאה וחזרה
-  // לדף, בלי לחכות לסנכרון היומי. ה-baseline הוא חותם הסנכרון המלא שהיה
-  // בתוקף בזמן הרענון — אם בינתיים רץ סנכרון מלא חדש (חותם אחר בחבילה
-  // הנוכחית), המטמון נחשב מיושן ומתעלמים ממנו, כדי שלא יידרוס נתונים טריים.
-  function cacheRefresh(byOwner, syncedAt){
-    try {
-      localStorage.setItem(REFRESH_CACHE, JSON.stringify({ byOwner: byOwner, syncedAt: syncedAt, baseline: BUNDLE_SYNCED_AT }));
-    } catch (_){}
-  }
-  function applyCachedRefresh(){
-    try {
-      var c = JSON.parse(localStorage.getItem(REFRESH_CACHE) || "null");
-      if (!c || !c.byOwner) return;
-      if (c.baseline !== BUNDLE_SYNCED_AT){ localStorage.removeItem(REFRESH_CACHE); return; }
-      Object.keys(c.byOwner).forEach(function(id){
-        if (session.sets[id]) session.sets[id].tasks = c.byOwner[id];
-      });
-      if (c.syncedAt) DATA.syncedAt = c.syncedAt;
-    } catch (_){}
-  }
 
   async function pullMarks(){
     var t = myToken();
@@ -1040,6 +1018,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     loadCachedMarks();
     renderAll();
     pullMarks();
+    pullLiveOverlay();
   }
 
   function ordOf(name){
@@ -1574,26 +1553,29 @@ button,input,select,textarea{font:inherit;color:inherit}
   $("sortType").addEventListener("click",  function(){ setSort("type");  });
   $("future").addEventListener("change", function(e){ showFuture = e.target.checked; renderAll(); });
 
-  // רענון חי ממאנדיי — למנהל בלבד. שולף מחדש את תוכן המשימות הידועות בלי
-  // לחכות לסנכרון היומי; משימה חדשה לגמרי מופיעה רק אחרי הסנכרון המלא הבא.
+  // רענון חי ממאנדיי — הכפתור עצמו מוצג רק למנהל, אבל הלחיצה משדרת את התוצאה
+  // לכולם (דרך Netlify Blobs בצד השרת): מי שנכנס או מרענן את הדף אחרי זה
+  // מושך אותה אוטומטית, גם בלי להיות מנהל. ראו pullLiveOverlay למטה.
+  // משימה חדשה לגמרי שנוצרה במאנדיי מופיעה רק אחרי הסנכרון המלא הבא.
   async function refreshFromMonday(){
     if (!session || !session.isAdmin) return;
     var btn = $("refreshBtn");
     if (btn.disabled) return;
     btn.disabled = true; btn.classList.add("spin");
     try {
-      var r = await fetch(REFRESH_API + "?t=" + encodeURIComponent(myToken()), { cache: "no-store" });
+      var r = await fetch(REFRESH_API + "?t=" + encodeURIComponent(myToken()) +
+                           "&baseline=" + encodeURIComponent(BUNDLE_SYNCED_AT) + "&trigger=1",
+                           { cache: "no-store" });
       if (!r.ok) throw new Error(r.status);
       var d = await r.json();
       Object.keys(d.byOwner || {}).forEach(function(id){
         if (session.sets[id]) session.sets[id].tasks = d.byOwner[id];
       });
       if (d.syncedAt) DATA.syncedAt = d.syncedAt;
-      cacheRefresh(d.byOwner, d.syncedAt);
       renderAll();
       toast(d.newCount
-        ? "התעדכן ממאנדיי · " + d.newCount + " משימות חדשות יופיעו בסנכרון הבא"
-        : "התעדכן ממאנדיי");
+        ? "עודכן לכולם ממאנדיי · " + d.newCount + " משימות חדשות יופיעו בסנכרון הבא"
+        : "עודכן לכולם ממאנדיי");
     } catch (err){
       toast("הרענון נכשל — נסו שוב", true);
     } finally {
@@ -1601,6 +1583,27 @@ button,input,select,textarea{font:inherit;color:inherit}
     }
   }
   $("refreshBtn").addEventListener("click", refreshFromMonday);
+
+  // קריאה פסיבית (בלי לגעת במאנדיי) — מושכת את מה שהמנהל שידר לאחרונה, אם
+  // יש כזה ואם הוא תואם לסנכרון המלא שהדף הנוכחי נבנה ממנו. רצה אצל כולם,
+  // בכניסה ובכניסה אוטומטית חוזרת.
+  async function pullLiveOverlay(){
+    var t = myToken();
+    if (!t) return;
+    try {
+      var r = await fetch(REFRESH_API + "?t=" + encodeURIComponent(t) +
+                           "&baseline=" + encodeURIComponent(BUNDLE_SYNCED_AT),
+                           { cache: "no-store" });
+      if (!r.ok) return;
+      var d = await r.json();
+      if (!d.ok || d.stale || !d.byOwner) return;
+      Object.keys(d.byOwner).forEach(function(id){
+        if (session.sets[id]) session.sets[id].tasks = d.byOwner[id];
+      });
+      if (d.syncedAt) DATA.syncedAt = d.syncedAt;
+      renderAll();
+    } catch (_){}
+  }
 
   $("toUpdates").addEventListener("click", function(){ view = "updates"; renderAll(); });
   $("toTasks").addEventListener("click",   function(){ view = "tasks";   renderAll(); });

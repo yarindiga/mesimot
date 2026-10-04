@@ -1,9 +1,20 @@
-// רענון חי (קריאה בלבד) של המשימות ממאנדיי — למנהל בלבד, לשימוש כשרוצים לעדכן
-// באמצע היום בלי לחכות לסנכרון האוטומטי. לא נוגע ב-users.json/keys.json ולא
-// בבלובים המוצפנים של אף משתמש — רק שולף מחדש את תוכן המשימות שכבר ידועות
-// (מיפוי משימה→בעלים מגיע מ-shared/_owners.mjs, כפי שנוצר בסנכרון המלא
-// האחרון). משימה שנוצרה במאנדיי אחרי הסנכרון המלא האחרון לא תופיע עד
-// שהסנכרון היומי ירוץ וייצור לה שיוך — ה-newCount מדווח כמה כאלה יש.
+// רענון חי (קריאה בלבד ממאנדיי) שמשודר לכולם.
+//
+// שני מצבים על אותו נתיב:
+// - trigger=1 (רק מנהל): שולח למאנדיי GraphQL query בלבד, ושומר את התוצאה
+//   כ"שידור" משותף ב-Netlify Blobs (store בשם live-tasks, מפתח יחיד "latest").
+//   זו הפעולה היחידה שבאמת פונה למאנדיי — ורק מנהל יכול להפעיל אותה.
+// - בלי trigger (כל משתמש מחובר): קריאה פסיבית בלבד — מחזירה את מה שכבר
+//   שודר, בלי לגעת במאנדיי. כל משתמש מקבל רק את המשימות שלו; מנהל מקבל הכל.
+//
+// baseline הוא חותם הסנכרון המלא (DATA.syncedAt) שהדף של המבקש נבנה ממנו.
+// אם הוא לא תואם לזה שנשמר בשידור — סימן שבינתיים רץ סנכרון מלא חדש, והשידור
+// נחשב מיושן ומתעלמים ממנו, כדי שלא יידרוס נתונים טריים יותר.
+//
+// לא נוגע ב-users.json/keys.json ולא בבלובים המוצפנים של אף משתמש. שיוך
+// משימה→בעלים מגיע מ-shared/_owners.mjs (כפי שנוצר בסנכרון המלא האחרון) —
+// משימה חדשה לגמרי שנוצרה במאנדיי מופיעה רק אחרי שהסנכרון היומי ירוץ.
+import { getStore } from "@netlify/blobs";
 import { OWNERS } from "../shared/_owners.mjs";
 
 const USERS = JSON.parse(process.env.APP_USERS || "{}");
@@ -87,20 +98,8 @@ function toTask(idx, item) {
   };
 }
 
-export default async (req) => {
-  if (req.method !== "GET") return json({ error: "method_not_allowed" }, 405);
-
-  const who = USERS[new URL(req.url).searchParams.get("t") || ""];
-  if (!who) return json({ error: "unauthorized" }, 401);
-  if (!who.admin) return json({ error: "forbidden" }, 403);
-  if (!MONDAY_TOKEN) return json({ error: "no_token" }, 500);
-
-  let raw;
-  try {
-    raw = await fetchItems();
-  } catch (e) {
-    return json({ error: "monday_fetch_failed", detail: String(e?.message || e).slice(0, 300) }, 502);
-  }
+async function liveFetch() {
+  const raw = await fetchItems();
 
   // כל בעלים שמופיע ב-OWNERS מקבל מערך — גם ריק — כדי שמי שסיים את כל
   // המשימות שלו יתרוקן בצד הלקוח ולא יישאר עם רשימה ישנה.
@@ -114,11 +113,57 @@ export default async (req) => {
     byOwner[ownerId].push(toTask(i, item));
   });
 
+  return { byOwner, newCount };
+}
+
+function nowSyncedAt() {
   const now = new Date();
-  const syncedAt =
+  return (
     new Intl.DateTimeFormat("he-IL", { timeZone: "Asia/Jerusalem", day: "numeric", month: "numeric", year: "numeric" }).format(now) +
     " בשעה " +
-    new Intl.DateTimeFormat("he-IL", { timeZone: "Asia/Jerusalem", hour: "2-digit", minute: "2-digit", hour12: false }).format(now);
+    new Intl.DateTimeFormat("he-IL", { timeZone: "Asia/Jerusalem", hour: "2-digit", minute: "2-digit", hour12: false }).format(now)
+  );
+}
 
-  return json({ ok: true, syncedAt, byOwner, newCount });
+export default async (req) => {
+  if (req.method !== "GET") return json({ error: "method_not_allowed" }, 405);
+
+  const url = new URL(req.url);
+  const who = USERS[url.searchParams.get("t") || ""];
+  if (!who) return json({ error: "unauthorized" }, 401);
+
+  const baseline = url.searchParams.get("baseline") || "";
+  const trigger = url.searchParams.get("trigger") === "1";
+  const store = getStore({ name: "live-tasks", consistency: "strong" });
+
+  if (trigger) {
+    if (!who.admin) return json({ error: "forbidden" }, 403);
+    if (!MONDAY_TOKEN) return json({ error: "no_token" }, 500);
+
+    let live;
+    try {
+      live = await liveFetch();
+    } catch (e) {
+      return json({ error: "monday_fetch_failed", detail: String(e?.message || e).slice(0, 300) }, 502);
+    }
+
+    const syncedAt = nowSyncedAt();
+    try {
+      await store.setJSON("latest", { byOwner: live.byOwner, syncedAt, baseline, at: Date.now() });
+    } catch (_) { /* השידור הוא נחמד-להיות — אם הוא נכשל, המנהל עדיין מקבל תשובה מיידית */ }
+
+    return json({ ok: true, syncedAt, byOwner: live.byOwner, newCount: live.newCount });
+  }
+
+  // קריאה פסיבית — בלי מאנדיי, רק מה שכבר שודר.
+  let snap;
+  try {
+    snap = await store.get("latest", { type: "json" });
+  } catch (_) {
+    snap = null;
+  }
+  if (!snap || snap.baseline !== baseline) return json({ ok: true, stale: true });
+
+  const byOwner = who.admin ? snap.byOwner : { [who.id]: snap.byOwner[who.id] || [] };
+  return json({ ok: true, syncedAt: snap.syncedAt, byOwner });
 };
