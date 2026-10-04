@@ -10,7 +10,11 @@ const BOARD_ID = 5094207356;
 const COL_STATUS = "color_mm257nb8"; // "בוצע?"
 const COL_PSTAT  = "text_mm2zk6cp";  // "סטטוס הפרויקט"
 
-const ALLOWED = new Set(["בטיפול", "בוצע"]);
+const ALLOWED = new Set(["עדיין לא", "בטיפול", "בוצע"]);
+// התווית שמוגדרת בעמודת הסטטוס במאנדיי כתובה "עדייין לא" (עם שגיאת כתיב) —
+// שומרים עליה כפי שהיא מוגדרת שם כדי לא ליפול על תווית לא-קיימת, בלי לחשוף
+// את שגיאת הכתיב באתר עצמו.
+const MONDAY_LABEL = { "עדיין לא": "עדייין לא" };
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), {
     status,
@@ -48,7 +52,7 @@ async function pushToMonday(taskId, status, note, at) {
     `mutation($b: ID!, $i: ID!, $c: String!, $v: JSON!) {
        change_column_value(board_id: $b, item_id: $i, column_id: $c, value: $v) { id }
      }`,
-    { b: BOARD_ID, i: taskId, c: COL_STATUS, v: JSON.stringify({ label: status }) }
+    { b: BOARD_ID, i: taskId, c: COL_STATUS, v: JSON.stringify({ label: MONDAY_LABEL[status] || status }) }
   );
 
   if (!note) return;
