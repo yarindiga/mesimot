@@ -802,6 +802,9 @@ button,input,select,textarea{font:inherit;color:inherit}
     }
     if (!order.length) throw new Error("no data");
     if (!me) me = order[0];
+    // "ללא שיוך" הוא תא-איסוף למשימות בלי אימייל מתאים במאנדיי — לא אדם אמיתי,
+    // ולכן לא מוצג כלשונית בסרגל הצוות. המשימות שבו נשארות ב-session.sets.
+    order = order.filter(function(id){ return sets[id].name !== "ללא שיוך"; });
     order.sort(function(a, b){ return (a === me ? -1 : 0) - (b === me ? -1 : 0); });
 
     session = { meId: me, isAdmin: !!sets[me].admin, sets: sets, order: order };
