@@ -201,6 +201,17 @@ button,input,select,textarea{font:inherit;color:inherit}
 .stat.notyet{background:var(--notyet-soft);border-color:transparent;color:var(--notyet)}
 .stat.notyet b{color:var(--notyet)}
 .synced{margin:9px 0 0;font-size:11.5px;color:var(--muted)}
+.refreshbtn{
+  display:inline-flex;align-items:center;gap:6px;margin-top:9px;
+  border:1px solid var(--line-strong);border-radius:99px;background:var(--surface);
+  color:var(--ink-2);font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer;
+  transition:background .15s,border-color .15s;
+}
+.refreshbtn svg{width:14px;height:14px;flex:none}
+.refreshbtn:hover{background:var(--hover);border-color:var(--accent)}
+.refreshbtn:disabled{opacity:.6;cursor:progress}
+.refreshbtn.spin svg{animation:rfspin .9s linear infinite}
+@keyframes rfspin{to{transform:rotate(360deg)}}
 
 /* ---- סרגל כלים ---- */
 .toolbar{padding-bottom:10px;display:flex;flex-direction:column;gap:8px}
@@ -625,6 +636,10 @@ button,input,select,textarea{font:inherit;color:inherit}
     <div class="track" id="track" hidden><i style="width:0"></i></div>
     <div class="stats" id="stats"></div>
     <p class="synced" id="synced"></p>
+    <button class="refreshbtn" id="refreshBtn" type="button" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+      <span>רענון מאנדיי</span>
+    </button>
   </section>
 
   <div class="banner" id="resumed" hidden></div>
@@ -720,6 +735,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   var statusOn = false;  // נדלק רק כשצד השרת עונה — עד אז אין כפתורי סימון
   var view  = "tasks";
   var API   = "/api/updates";
+  var REFRESH_API = "/api/refresh";
   var MARKS_CACHE = "tb.marks";
   var openId = null;     // המשימה הפתוחה — שורה מורחבת בטלפון, פאנל צדדי במחשב
   var clearedAt = 0;     // מנהל בלבד: חותם הזמן של "ניקוי" אחרון במסך העדכונים
@@ -975,6 +991,7 @@ button,input,select,textarea{font:inherit;color:inherit}
       });
       $("futureWrap").hidden = false;
     }
+    $("refreshBtn").hidden = !session.isAdmin;
     var rb = $("resumed");
     if (autoResumed){
       rb.hidden = false;
@@ -1529,6 +1546,34 @@ button,input,select,textarea{font:inherit;color:inherit}
   $("sortBoard").addEventListener("click", function(){ setSort("board"); });
   $("sortType").addEventListener("click",  function(){ setSort("type");  });
   $("future").addEventListener("change", function(e){ showFuture = e.target.checked; renderAll(); });
+
+  // רענון חי ממאנדיי — למנהל בלבד. שולף מחדש את תוכן המשימות הידועות בלי
+  // לחכות לסנכרון היומי; משימה חדשה לגמרי מופיעה רק אחרי הסנכרון המלא הבא.
+  async function refreshFromMonday(){
+    if (!session || !session.isAdmin) return;
+    var btn = $("refreshBtn");
+    if (btn.disabled) return;
+    btn.disabled = true; btn.classList.add("spin");
+    try {
+      var r = await fetch(REFRESH_API + "?t=" + encodeURIComponent(myToken()), { cache: "no-store" });
+      if (!r.ok) throw new Error(r.status);
+      var d = await r.json();
+      Object.keys(d.byOwner || {}).forEach(function(id){
+        if (session.sets[id]) session.sets[id].tasks = d.byOwner[id];
+      });
+      if (d.syncedAt) DATA.syncedAt = d.syncedAt;
+      renderAll();
+      toast(d.newCount
+        ? "התעדכן ממאנדיי · " + d.newCount + " משימות חדשות יופיעו בסנכרון הבא"
+        : "התעדכן ממאנדיי");
+    } catch (err){
+      toast("הרענון נכשל — נסו שוב", true);
+    } finally {
+      btn.disabled = false; btn.classList.remove("spin");
+    }
+  }
+  $("refreshBtn").addEventListener("click", refreshFromMonday);
+
   $("toUpdates").addEventListener("click", function(){ view = "updates"; renderAll(); });
   $("toTasks").addEventListener("click",   function(){ view = "tasks";   renderAll(); });
   $("logout").addEventListener("click", function(){
@@ -1539,6 +1584,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     $("adminbar").innerHTML = ""; $("adminbarWrap").hidden = true;
     $("futureWrap").hidden = true; $("future").checked = false; showFuture = false;
     $("toUpdates").hidden = true; $("toTasks").hidden = true;
+    $("refreshBtn").hidden = true;
     $("search").value = ""; query = ""; statusFilter = "all";
     $("filters").innerHTML = ""; $("filters").hidden = true;
     $("content").innerHTML = ""; $("updatesView").innerHTML = ""; $("pane").innerHTML = "";
