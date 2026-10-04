@@ -667,6 +667,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   document.documentElement.dir  = "rtl";
 
   var DATA = JSON.parse(document.getElementById("bundle").textContent);
+  var BUNDLE_SYNCED_AT = DATA.syncedAt;  // חותם הסנכרון המלא האחרון — בסיס להשוואה מול רענון חי שמור
   var $ = function(id){ return document.getElementById(id); };
   var STORE_KEY = "tb.remember";
   var NO_TYPE = "ללא סוג";
@@ -737,6 +738,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   var API   = "/api/updates";
   var REFRESH_API = "/api/refresh";
   var MARKS_CACHE = "tb.marks";
+  var REFRESH_CACHE = "tb.refresh";
   var openId = null;     // המשימה הפתוחה — שורה מורחבת בטלפון, פאנל צדדי במחשב
   var clearedAt = 0;     // מנהל בלבד: חותם הזמן של "ניקוי" אחרון במסך העדכונים
   var history = [];      // מנהל בלבד: כל העדכונים שנרשמו אי פעם, גם אחרי ניקוי
@@ -809,6 +811,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 
     session = { meId: me, isAdmin: !!sets[me].admin, sets: sets, order: order };
     active  = me;
+    if (session.isAdmin) applyCachedRefresh();
     enterApp();
   }
 
@@ -840,6 +843,27 @@ button,input,select,textarea{font:inherit;color:inherit}
   }
   function loadCachedMarks(){
     try { marks = JSON.parse(localStorage.getItem(MARKS_CACHE) || "{}") || {}; } catch (_){ marks = {}; }
+  }
+
+  // שומר את תוצאת הרענון החי האחרון (רק למנהל) כדי שתישאר אחרי יציאה וחזרה
+  // לדף, בלי לחכות לסנכרון היומי. ה-baseline הוא חותם הסנכרון המלא שהיה
+  // בתוקף בזמן הרענון — אם בינתיים רץ סנכרון מלא חדש (חותם אחר בחבילה
+  // הנוכחית), המטמון נחשב מיושן ומתעלמים ממנו, כדי שלא יידרוס נתונים טריים.
+  function cacheRefresh(byOwner, syncedAt){
+    try {
+      localStorage.setItem(REFRESH_CACHE, JSON.stringify({ byOwner: byOwner, syncedAt: syncedAt, baseline: BUNDLE_SYNCED_AT }));
+    } catch (_){}
+  }
+  function applyCachedRefresh(){
+    try {
+      var c = JSON.parse(localStorage.getItem(REFRESH_CACHE) || "null");
+      if (!c || !c.byOwner) return;
+      if (c.baseline !== BUNDLE_SYNCED_AT){ localStorage.removeItem(REFRESH_CACHE); return; }
+      Object.keys(c.byOwner).forEach(function(id){
+        if (session.sets[id]) session.sets[id].tasks = c.byOwner[id];
+      });
+      if (c.syncedAt) DATA.syncedAt = c.syncedAt;
+    } catch (_){}
   }
 
   async function pullMarks(){
@@ -1565,6 +1589,7 @@ button,input,select,textarea{font:inherit;color:inherit}
         if (session.sets[id]) session.sets[id].tasks = d.byOwner[id];
       });
       if (d.syncedAt) DATA.syncedAt = d.syncedAt;
+      cacheRefresh(d.byOwner, d.syncedAt);
       renderAll();
       toast(d.newCount
         ? "התעדכן ממאנדיי · " + d.newCount + " משימות חדשות יופיעו בסנכרון הבא"
