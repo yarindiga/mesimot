@@ -324,6 +324,13 @@ def main():
 
     write_function_data(users, owners, store, by_owner)
 
+    # מיפוי hash(אימייל)→בעלים, בשביל רענון חי שמזהה שינוי שיוך במאנדיי (ראו
+    # functions/refresh.mjs). אותו hash בדיוק כמו uid() למעלה — לא אימייל גלוי,
+    # לא מפתח חדש: site_salt כבר נשלח ללקוח בתוך bundle.siteSalt ממילא.
+    owner_hash_map = {uid(o): store["blobIds"][o] for o in owners}
+    push_env("OWNER_BY_EMAIL_HASH",
+             json.dumps({"salt": site_salt, "map": owner_hash_map}, ensure_ascii=False, separators=(",", ":")))
+
     now = datetime.datetime.now(TZ)
     bundle = {
         "iter": ITERS,

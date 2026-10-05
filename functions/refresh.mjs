@@ -12,19 +12,31 @@
 // נחשב מיושן ומתעלמים ממנו, כדי שלא יידרוס נתונים טריים יותר.
 //
 // לא נוגע ב-users.json/keys.json ולא בבלובים המוצפנים של אף משתמש. שיוך
-// משימה→בעלים מגיע מ-shared/_owners.mjs (כפי שנוצר בסנכרון המלא האחרון) —
-// משימה חדשה לגמרי שנוצרה במאנדיי מופיעה רק אחרי שהסנכרון היומי ירוץ.
+// משימה→בעלים מגיע בעיקרון מ-shared/_owners.mjs (כפי שנוצר בסנכרון המלא
+// האחרון) — אבל אם עמודת האימייל של המשימה במאנדיי השתנתה מאז (המשימה
+// הועברה לאחראי אחר), היא מזוהה דרך OWNER_BY_EMAIL_HASH (ראו resolveOwner
+// למטה) והמשימה "זזה" לבעלים הנכון כבר ברענון החי, בלי לחכות לסנכרון המלא.
+// משימה חדשה לגמרי, שהאימייל שלה לא מזוהה בכלל, עדיין ממתינה לסנכרון היומי.
 import { getStore } from "@netlify/blobs";
 import { OWNERS } from "../shared/_owners.mjs";
 
 const USERS = JSON.parse(process.env.APP_USERS || "{}");
 const MONDAY_TOKEN = process.env.MONDAY_TOKEN || "";
 const BOARD_ID = 5094207356;
+const COL_EMAIL = "email_mm2bvkpj";
 const COL_DATE  = "date_mm2z4a07";
 const COL_TASK  = "text_mm2zjggr";
 const COL_TYPE  = "color_mm2xvme0";
 const COL_NOTES = "text_mm2z594d";
 const COL_PSTAT = "text_mm2zk6cp";
+
+// { salt, map: { hash(email) -> blobId } } — נדחף על ידי build_site.py בכל
+// בנייה. ה-hash זהה בדיוק ל-uid() שבאתר (sha256(salt + ":" + email)[:32]):
+// לא אימייל גלוי, ולא מפתח חדש — salt כבר נשלח ללקוח בתוך bundle.siteSalt.
+const OWNER_HASH = (() => {
+  try { return JSON.parse(process.env.OWNER_BY_EMAIL_HASH || "null"); }
+  catch (_) { return null; }
+})();
 
 const QUERY = `
   query($cursor: String) {
@@ -35,7 +47,7 @@ const QUERY = `
           id
           name
           group { title }
-          column_values(ids: ["${COL_DATE}","${COL_TASK}","${COL_TYPE}","${COL_NOTES}","${COL_PSTAT}"]) { id text }
+          column_values(ids: ["${COL_EMAIL}","${COL_DATE}","${COL_TASK}","${COL_TYPE}","${COL_NOTES}","${COL_PSTAT}"]) { id text }
         }
       }
     }
@@ -85,9 +97,13 @@ async function fetchItems() {
   }
 }
 
-function toTask(idx, item) {
+function colMap(item) {
   const col = {};
   for (const c of item.column_values) col[c.id] = tidy(c.text);
+  return col;
+}
+
+function toTask(idx, item, col) {
   const [addr, city] = splitCity(item.name);
   return {
     id: item.id, ord: idx, group: item.group.title,
@@ -96,6 +112,25 @@ function toTask(idx, item) {
     desc: col[COL_TASK] || "", notes: col[COL_NOTES] || "",
     pstatus: col[COL_PSTAT] || "",
   };
+}
+
+// זהה ל-uid() שב-build_site.py: sha256(salt + ":" + email), 32 תווי hex ראשונים.
+async function uidHash(email, salt) {
+  const data = new TextEncoder().encode(salt + ":" + email);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 32);
+}
+
+// עדיפות לשיוך החי (לפי עמודת האימייל כרגע במאנדיי); אם האימייל ריק או לא
+// מזוהה אצל אף משתמש, נופלים חזרה לשיוך הסטטי מהסנכרון המלא האחרון.
+async function resolveOwner(item, col) {
+  const liveEmail = (col[COL_EMAIL] || "").toLowerCase();
+  if (liveEmail && OWNER_HASH && OWNER_HASH.map) {
+    const h = await uidHash(liveEmail, OWNER_HASH.salt);
+    const liveOwnerId = OWNER_HASH.map[h];
+    if (liveOwnerId) return liveOwnerId;
+  }
+  return OWNERS[item.id] || null;
 }
 
 async function liveFetch() {
@@ -107,11 +142,14 @@ async function liveFetch() {
   for (const ownerId of new Set(Object.values(OWNERS))) byOwner[ownerId] = [];
 
   let newCount = 0;
-  raw.forEach((item, i) => {
-    const ownerId = OWNERS[item.id];
-    if (!ownerId) { newCount++; return; }
-    byOwner[ownerId].push(toTask(i, item));
-  });
+  for (let i = 0; i < raw.length; i++) {
+    const item = raw[i];
+    const col = colMap(item);
+    const ownerId = await resolveOwner(item, col);
+    if (!ownerId) { newCount++; continue; }
+    if (!byOwner[ownerId]) byOwner[ownerId] = [];
+    byOwner[ownerId].push(toTask(i, item, col));
+  }
 
   return { byOwner, newCount };
 }
