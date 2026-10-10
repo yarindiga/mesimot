@@ -1,2 +1,3 @@
 /api/updates  /.netlify/functions/updates  200
 /api/refresh  /.netlify/functions/refresh  200
+/api/visits   /.netlify/functions/visits   200

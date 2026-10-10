@@ -598,6 +598,10 @@ button,input,select,textarea{font:inherit;color:inherit}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
         <span class="lbl2">עדכונים</span><span class="badge" id="uBadge">0</span>
       </button>
+      <button class="iconbtn" id="toVisits" type="button" hidden title="כניסות צוות" aria-label="כניסות צוות">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <span class="lbl2">כניסות</span>
+      </button>
       <button class="iconbtn" id="toTasks" type="button" hidden title="חזרה למשימות" aria-label="חזרה למשימות">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
         <span class="lbl2">למשימות</span>
@@ -737,11 +741,13 @@ button,input,select,textarea{font:inherit;color:inherit}
   var view  = "tasks";
   var API   = "/api/updates";
   var REFRESH_API = "/api/refresh";
+  var VISITS_API = "/api/visits";
   var MARKS_CACHE = "tb.marks";
   var openId = null;     // המשימה הפתוחה — שורה מורחבת בטלפון, פאנל צדדי במחשב
   var clearedAt = 0;     // מנהל בלבד: חותם הזמן של "ניקוי" אחרון במסך העדכונים
   var history = [];      // מנהל בלבד: כל העדכונים שנרשמו אי פעם, גם אחרי ניקוי
   var updatesSub = "active"; // "active" | "history"
+  var visits;             // מנהל בלבד: יומן כניסות השבוע האחרון. undefined = עוד לא נטען, null = שגיאה
 
   /* ---------- כניסה ---------- */
   $("loginForm").addEventListener("submit", function(e){
@@ -1019,6 +1025,18 @@ button,input,select,textarea{font:inherit;color:inherit}
     renderAll();
     pullMarks();
     pullLiveOverlay();
+    logVisit();
+  }
+
+  // רישום כניסה (למסך "כניסות" של המנהל) — שיגור בלבד, לא חוסם ולא מציג שגיאה.
+  function logVisit(){
+    var t = myToken();
+    if (!t) return;
+    fetch(VISITS_API, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ t: t }),
+    }).catch(function(){});
   }
 
   function ordOf(name){
@@ -1031,8 +1049,11 @@ button,input,select,textarea{font:inherit;color:inherit}
     var n = Object.keys(marks).filter(function(k){ return (marks[k].at || 0) > clearedAt; }).length;
     $("uBadge").textContent = n;
     $("toUpdates").hidden = !(session.isAdmin && statusOn && view === "tasks");
-    $("toTasks").hidden   = (view !== "updates");
-    if (view === "updates") renderUpdates(); else render();
+    $("toVisits").hidden  = !(session.isAdmin && view === "tasks");
+    $("toTasks").hidden   = (view === "tasks");
+    if (view === "updates") renderUpdates();
+    else if (view === "visits") renderVisits();
+    else render();
   }
 
   function passesFilter(t){
@@ -1254,6 +1275,69 @@ button,input,select,textarea{font:inherit;color:inherit}
           "</div>" +
           (u.note ? '<div class="unote">' + esc(u.note) + "</div>" : "") +
         "</div>";
+      wrap.appendChild(el);
+    });
+    box.appendChild(wrap);
+    paintPane();
+  }
+
+  // טוענת את יומן הכניסות מהשרת ועוברת למסך — רק המנהל רואה את הכפתור שמפעיל את זה.
+  async function showVisits(){
+    view = "visits"; renderAll();   // מציג "טוען…" לפני שהתשובה חוזרת
+    try {
+      var r = await fetch(VISITS_API + "?t=" + encodeURIComponent(myToken()), { cache: "no-store" });
+      if (!r.ok) throw new Error(r.status);
+      var d = await r.json();
+      visits = d.visits || [];
+    } catch (err){
+      visits = null;
+    }
+    if (view === "visits") renderAll();
+  }
+
+  function renderVisits(){
+    $("viewTitle").textContent = "כניסות צוות";
+    $("viewing").hidden = true;
+    $("statusline").innerHTML = "";
+    $("content").hidden = true;
+    $("toolbar").hidden = true;
+    var box = $("updatesView");
+    box.hidden = false;
+    box.innerHTML = "";
+
+    if (visits === undefined){
+      box.innerHTML = '<div class="empty">טוען…</div>';
+      return;
+    }
+    if (visits === null){
+      box.innerHTML = '<div class="empty"><strong>הטעינה נכשלה</strong>נסו שוב.</div>';
+      return;
+    }
+    if (!visits.length){
+      box.innerHTML = '<div class="empty"><strong>אין כניסות עדיין</strong>כאן תוצג היסטוריית הכניסות של השבוע האחרון.</div>';
+      return;
+    }
+
+    var wrap = document.createElement("div");
+    wrap.className = "ulist";
+    var lastDay = null;
+    visits.forEach(function(v){
+      var day = dayLabel(v.at);
+      if (day !== lastDay){
+        lastDay = day;
+        var h = document.createElement("div");
+        h.className = "uday";
+        h.textContent = day;
+        wrap.appendChild(h);
+      }
+      var el = document.createElement("div");
+      el.className = "uitem";
+      el.innerHTML =
+        '<span class="uava">' + esc((v.name || "—").slice(0, 1)) + "</span>" +
+        '<div class="ubody"><div class="uhead">' +
+          '<span class="uaddr">' + esc(v.name || "—") + "</span>" +
+          '<span class="utime">' + timeLabel(v.at) + "</span>" +
+        "</div></div>";
       wrap.appendChild(el);
     });
     box.appendChild(wrap);
@@ -1606,15 +1690,16 @@ button,input,select,textarea{font:inherit;color:inherit}
   }
 
   $("toUpdates").addEventListener("click", function(){ view = "updates"; renderAll(); });
+  $("toVisits").addEventListener("click", showVisits);
   $("toTasks").addEventListener("click",   function(){ view = "tasks";   renderAll(); });
   $("logout").addEventListener("click", function(){
     session = null; marks = {}; view = "tasks"; autoResumed = false; forget();
-    clearedAt = 0; history = []; updatesSub = "active"; openId = null;
+    clearedAt = 0; history = []; updatesSub = "active"; openId = null; visits = undefined;
     $("resumed").hidden = true;
     $("viewing").hidden = true;
     $("adminbar").innerHTML = ""; $("adminbarWrap").hidden = true;
     $("futureWrap").hidden = true; $("future").checked = false; showFuture = false;
-    $("toUpdates").hidden = true; $("toTasks").hidden = true;
+    $("toUpdates").hidden = true; $("toVisits").hidden = true; $("toTasks").hidden = true;
     $("refreshBtn").hidden = true;
     $("search").value = ""; query = ""; statusFilter = "all";
     $("filters").innerHTML = ""; $("filters").hidden = true;
