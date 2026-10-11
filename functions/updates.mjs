@@ -158,6 +158,9 @@ export default async (req) => {
       status: body.status,
       note: String(body.note || "").slice(0, 500),
       addr: String(body.addr || "").slice(0, 120),
+      // טביעת-אצבע (לא הפוכה, לא התיאור עצמו) על תיאור המשימה בזמן הסימון — כדי
+      // שהאתר יוכל לזהות בצד הלקוח שהתיאור השתנה במאנדיי מאז, ולהתעלם מהסימון הישן.
+      descHash: String(body.descHash || "").slice(0, 20),
       byId: who.id,
       byName: who.name,
       at: Date.now(),

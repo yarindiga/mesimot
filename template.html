@@ -364,15 +364,6 @@ button,input,select,textarea{font:inherit;color:inherit}
 }
 .row.open .rprev{display:none}
 .rside{display:flex;align-items:center;gap:6px;flex:none;margin-inline-start:auto}
-.callbtn{
-  flex:none;width:36px;height:36px;border-radius:11px;text-decoration:none;
-  border:1px solid var(--line);background:var(--surface-2);color:var(--accent);
-  display:inline-flex;align-items:center;justify-content:center;
-  transition:background .15s,transform .12s,border-color .15s;
-}
-.callbtn svg{width:16px;height:16px}
-.callbtn:hover{background:var(--accent-soft);border-color:transparent}
-.callbtn:active{transform:scale(.92)}
 
 .detail{display:none;padding:2px 26px 18px 50px;background:var(--hover);border-top:1px solid var(--line)}
 .row.open + .detail{display:block}
@@ -736,8 +727,24 @@ button,input,select,textarea{font:inherit;color:inherit}
   var session = null, active = null, query = "", showFuture = false, sortMode = "board";
   var autoResumed = false;
   var statusFilter = "all";
-  var marks = {};        // taskId -> {status, note, byName, at}
+  var marks = {};        // taskId -> {status, note, byName, at, descHash}
   var statusOn = false;  // נדלק רק כשצד השרת עונה — עד אז אין כפתורי סימון
+
+  // טביעת-אצבע קצרה (לא קריפטוגרפית — רק לזיהוי שינוי) על תיאור המשימה, נשמרת
+  // יחד עם הסימון. אם התיאור במאנדיי משתנה אחרי שסימנו "בוצע", טביעת האצבע כבר
+  // לא תואמת — והסימון מוצג כאילו לא קיים, כי זו כבר משימה אחרת למעשה.
+  // סימונים ישנים בלי descHash (מלפני התכונה) ממשיכים תמיד כרגיל.
+  function descFingerprint(desc){
+    var s = String(desc || ""), h = 5381;
+    for (var i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+    return h.toString(36);
+  }
+  function activeMark(t){
+    var m = marks[t.id];
+    if (!m) return null;
+    if (m.descHash && m.descHash !== descFingerprint(t.desc)) return null;
+    return m;
+  }
   var view  = "tasks";
   var API   = "/api/updates";
   var REFRESH_API = "/api/refresh";
@@ -870,11 +877,12 @@ button,input,select,textarea{font:inherit;color:inherit}
     }
   }
 
-  async function setStatus(taskId, status, note, addr, btn){
+  async function setStatus(taskId, status, note, addr, desc, btn){
+    var descHash = descFingerprint(desc);
     var before = marks[taskId];
     if (status === null) delete marks[taskId];
     else marks[taskId] = { status: status, note: note || "", byName: labelOf(session.meId),
-                           byId: session.meId, at: Date.now(), addr: addr };
+                           byId: session.meId, at: Date.now(), addr: addr, descHash: descHash };
     cacheMarks();
     renderAll();
     if (btn) btn.classList.add("saving");
@@ -883,7 +891,7 @@ button,input,select,textarea{font:inherit;color:inherit}
       var r = await fetch(API, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ t: myToken(), taskId: taskId, status: status, note: note || "", addr: addr }),
+        body: JSON.stringify({ t: myToken(), taskId: taskId, status: status, note: note || "", addr: addr, descHash: descHash }),
       });
       if (!r.ok) throw new Error(r.status);
       toast(status === null ? "הסימון בוטל" : "נשמר · " + status);
@@ -907,7 +915,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   // כדי שאפשר יהיה לכתוב את ההערה לפני ששולחים — ולא אחרי שכבר נשמר.
   function openPicker(row, t, btn){
     closePop();
-    var cur = marks[t.id];
+    var cur = activeMark(t);
     var picked = cur ? cur.status : null;
 
     var bg = document.createElement("div");
@@ -956,10 +964,10 @@ button,input,select,textarea{font:inherit;color:inherit}
     save.addEventListener("click", function(){
       if (!picked) return;
       closePop();
-      setStatus(t.id, picked, ta.value, t.addr, btn);
+      setStatus(t.id, picked, ta.value, t.addr, t.desc, btn);
     });
     var cl = pop.querySelector(".clear");
-    if (cl) cl.addEventListener("click", function(){ closePop(); setStatus(t.id, null, "", t.addr, btn); });
+    if (cl) cl.addEventListener("click", function(){ closePop(); setStatus(t.id, null, "", t.addr, t.desc, btn); });
     pop.querySelector(".close").addEventListener("click", closePop);
     // Ctrl/Cmd+Enter שומר מתוך תיבת ההערה
     ta.addEventListener("keydown", function(e){
@@ -1058,7 +1066,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 
   function passesFilter(t){
     if (statusFilter === "all") return true;
-    var m = marks[t.id];
+    var m = activeMark(t);
     if (statusFilter === "open")    return !m;
     if (statusFilter === "notyet")  return !!m && m.status === "עדיין לא";
     if (statusFilter === "working") return !!m && m.status === "בטיפול";
@@ -1071,10 +1079,10 @@ button,input,select,textarea{font:inherit;color:inherit}
     if (!statusOn){ box.hidden = true; box.innerHTML = ""; return; }
     var counts = {
       all: all.length,
-      open: all.filter(function(t){ return !marks[t.id]; }).length,
-      notyet: all.filter(function(t){ return marks[t.id] && marks[t.id].status === "עדיין לא"; }).length,
-      working: all.filter(function(t){ return marks[t.id] && marks[t.id].status === "בטיפול"; }).length,
-      done: all.filter(function(t){ return marks[t.id] && marks[t.id].status === "בוצע"; }).length,
+      open: all.filter(function(t){ return !activeMark(t); }).length,
+      notyet: all.filter(function(t){ var m = activeMark(t); return m && m.status === "עדיין לא"; }).length,
+      working: all.filter(function(t){ var m = activeMark(t); return m && m.status === "בטיפול"; }).length,
+      done: all.filter(function(t){ var m = activeMark(t); return m && m.status === "בוצע"; }).length,
     };
     if (!counts.notyet && !counts.working && !counts.done && statusFilter === "all"){ box.hidden = true; box.innerHTML = ""; return; }
     box.hidden = false;
@@ -1126,9 +1134,9 @@ button,input,select,textarea{font:inherit;color:inherit}
       }
     }
 
-    var done = pool.filter(function(t){ return marks[t.id] && marks[t.id].status === "בוצע"; }).length;
-    var busy = pool.filter(function(t){ return marks[t.id] && marks[t.id].status === "בטיפול"; }).length;
-    var notyet = pool.filter(function(t){ return marks[t.id] && marks[t.id].status === "עדיין לא"; }).length;
+    var done = pool.filter(function(t){ var m = activeMark(t); return m && m.status === "בוצע"; }).length;
+    var busy = pool.filter(function(t){ var m = activeMark(t); return m && m.status === "בטיפול"; }).length;
+    var notyet = pool.filter(function(t){ var m = activeMark(t); return m && m.status === "עדיין לא"; }).length;
 
     $("eyebrow").textContent = new Intl.DateTimeFormat("he-IL", {
       timeZone:"Asia/Jerusalem", weekday:"long", day:"numeric", month:"long" }).format(new Date());
@@ -1425,11 +1433,6 @@ button,input,select,textarea{font:inherit;color:inherit}
     return out;
   }
 
-  function firstContact(t){
-    var c = contactsIn(t.notes);
-    return c.length ? c[0] : (contactsIn(t.desc)[0] || null);
-  }
-
   // "סטטוס הפרויקט" במאנדיי הוא יומן מתוארך (יום.חודש ואז הטקסט, בלוקים מופרדים
   // בשורה ריקה). מפרקים אותו לרשומות ומציגים כטיימליין, החדש למעלה.
   var RE_DATELINE = /^\s*(\d{1,2}\.\d{1,2}(?:\.\d{2,4})?)\s*$/;
@@ -1506,7 +1509,7 @@ button,input,select,textarea{font:inherit;color:inherit}
       pane.innerHTML = '<div class="pane-empty"><span class="ico">✦</span>בחרו משימה מהרשימה כדי לראות את הפרטים, אנשי הקשר והיומן שלה.</div>';
       return;
     }
-    var mk = marks[t.id];
+    var mk = activeMark(t);
     var c = t.type ? DATA.types[t.type] : null;
     pane.innerHTML =
       '<div class="pane-head"><div>' +
@@ -1524,7 +1527,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   var statusDot = { done: "✓", working: "●", notyet: "○" };
 
   function addRow(container, t){
-    var mk = marks[t.id];
+    var mk = activeMark(t);
     var has = !!(t.desc || t.notes || t.pstatus);
     var kind = mk ? statusKind(mk.status) : null;
 
@@ -1565,7 +1568,6 @@ button,input,select,textarea{font:inherit;color:inherit}
                : '<span class="chip">' + esc(t.type) + "</span>";
     }
 
-    var tel = firstContact(t);
     main.innerHTML =
       '<div class="rline">' +
         '<span class="addr">' + esc(t.addr) + "</span>" +
@@ -1574,19 +1576,6 @@ button,input,select,textarea{font:inherit;color:inherit}
       "</div>" +
       (t.desc ? '<div class="rprev">' + esc(oneLine(t.desc)) + "</div>" : "");
     row.appendChild(main);
-
-    // חיוג בנגיעה אחת — הפעולה הכי שכיחה בשטח, בלי להיכנס לפרטי המשימה
-    if (tel){
-      var who = tel.name ? tel.name + " · " + tel.tel : tel.tel;
-      var call = document.createElement("a");
-      call.className = "callbtn";
-      call.href = "tel:" + tel.tel.replace(/\D/g, "");
-      call.title = "חיוג ל-" + who;
-      call.setAttribute("aria-label", "חיוג ל-" + who);
-      call.innerHTML = PHONE_ICON;
-      call.addEventListener("click", function(e){ e.stopPropagation(); });
-      row.appendChild(call);
-    }
 
     var detail = document.createElement("div");
     detail.className = "detail";
