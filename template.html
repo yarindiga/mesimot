@@ -663,6 +663,9 @@ button,input,select,textarea{font:inherit;color:inherit}
 
   var DATA = JSON.parse(document.getElementById("bundle").textContent);
   var BUNDLE_SYNCED_AT = DATA.syncedAt;  // חותם הסנכרון המלא האחרון — בסיס להשוואה מול רענון חי שמור
+  // תיאור כל משימה כפי שהגיע מהחבילה המוצפנת (הסנכרון המלא האחרון), לפני שרענון
+  // חי כלשהו דורס אותו ב-session.sets — ראו activeMark למטה.
+  var BUNDLE_DESC = {};
   var $ = function(id){ return document.getElementById(id); };
   var STORE_KEY = "tb.remember";
   var NO_TYPE = "ללא סוג";
@@ -733,7 +736,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   // טביעת-אצבע קצרה (לא קריפטוגרפית — רק לזיהוי שינוי) על תיאור המשימה, נשמרת
   // יחד עם הסימון. אם התיאור במאנדיי משתנה אחרי שסימנו "בוצע", טביעת האצבע כבר
   // לא תואמת — והסימון מוצג כאילו לא קיים, כי זו כבר משימה אחרת למעשה.
-  // סימונים ישנים בלי descHash (מלפני התכונה) ממשיכים תמיד כרגיל.
+  // לסימונים ישנים בלי descHash שמור (מלפני התכונה) יש גיבוי ב-BUNDLE_DESC.
   function descFingerprint(desc){
     var s = String(desc || ""), h = 5381;
     for (var i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
@@ -742,7 +745,10 @@ button,input,select,textarea{font:inherit;color:inherit}
   function activeMark(t){
     var m = marks[t.id];
     if (!m) return null;
-    if (m.descHash && m.descHash !== descFingerprint(t.desc)) return null;
+    // בסימון שנשמר בלי descHash (מלפני התכונה הזו, או כל עוד הדפדפן לא טען משהו
+    // אחר) — נופלים חזרה לתיאור כפי שהגיע בסנכרון המלא האחרון, כבסיס השוואה סביר.
+    var baseline = m.descHash || (BUNDLE_DESC.hasOwnProperty(t.id) ? descFingerprint(BUNDLE_DESC[t.id]) : "");
+    if (baseline && baseline !== descFingerprint(t.desc)) return null;
     return m;
   }
   var view  = "tasks";
@@ -820,6 +826,10 @@ button,input,select,textarea{font:inherit;color:inherit}
     // ולכן לא מוצג כלשונית בסרגל הצוות. המשימות שבו נשארות ב-session.sets.
     order = order.filter(function(id){ return sets[id].name !== "ללא שיוך"; });
     order.sort(function(a, b){ return (a === me ? -1 : 0) - (b === me ? -1 : 0); });
+
+    Object.keys(sets).forEach(function(id){
+      (sets[id].tasks || []).forEach(function(t){ BUNDLE_DESC[t.id] = t.desc || ""; });
+    });
 
     session = { meId: me, isAdmin: !!sets[me].admin, sets: sets, order: order };
     active  = me;
