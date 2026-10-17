@@ -183,9 +183,11 @@ def write_function_data(users, owners, store, by_owner):
             "id":          store["blobIds"][owner],
             "name":        u["name"] if u else "ללא שיוך",
             "admin":       bool(u.get("admin")) if u else False,
-            # hidePstatus: "רענון חי" (functions/refresh.mjs) שולף ישר ממאנדיי,
-            # בעקיפת המאגר המוצפן — ולכן חייב לרוקן "סטטוס הפרויקט" גם הוא.
+            # hidePstatus/hideNotes: "רענון חי" (functions/refresh.mjs) שולף
+            # ישר ממאנדיי, בעקיפת המאגר המוצפן — ולכן חייב לרוקן את השדות
+            # האלה גם הוא.
             "hidePstatus": bool(u.get("hidePstatus")) if u else False,
+            "hideNotes":   bool(u.get("hideNotes")) if u else False,
         }
     task_owner = {t["id"]: store["blobIds"][owner]
                   for owner in owners for t in by_owner[owner]}
@@ -283,11 +285,18 @@ def main():
         wt = store["writeTokens"].get(owner) or secrets.token_urlsafe(24)
         store["writeTokens"][owner] = wt
 
-        hide = bool(who and who.get("hidePstatus"))
+        hide_pstatus = bool(who and who.get("hidePstatus"))
+        hide_notes   = bool(who and who.get("hideNotes"))
+        hide = hide_pstatus or hide_notes
         # מאגר זה הוא מה שהבעלים עצמו מתחבר אליו (bid/dk קבועים, לעולם לא
         # מתבטלים — כדי ש"זכור אותי" הקיים ממשיך לעבוד בלי כניסה מחדש).
-        # למי שמסומן hidePstatus (למשל דניאל) — "סטטוס הפרויקט" מרוקן כבר כאן.
-        own_tasks = [dict(t, pstatus="") for t in by_owner[owner]] if hide else by_owner[owner]
+        # למי שמסומן hidePstatus/hideNotes (למשל דניאל) — השדה המתאים מרוקן
+        # כבר כאן ("סטטוס הפרויקט" / "תיאור + טלפונים").
+        def _redact(t):
+            if hide_pstatus: t = dict(t, pstatus="")
+            if hide_notes:   t = dict(t, notes="")
+            return t
+        own_tasks = [_redact(t) for t in by_owner[owner]] if hide else by_owner[owner]
         body = json.dumps({
             "name":  who["name"] if who else "ללא שיוך",
             "admin": bool(who.get("admin")) if who else False,

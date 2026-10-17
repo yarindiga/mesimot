@@ -202,15 +202,17 @@ export default async (req) => {
   }
   if (!snap || snap.baseline !== baseline) return json({ ok: true, stale: true });
 
-  // משתמש רגיל עם hidePstatus (למשל דניאל): זה מגיע ישר ממאנדיי (ראו toTask
-  // למעלה), בעקיפת המאגר המוצפן שבו build_site.py כבר ריקן את "סטטוס
-  // הפרויקט" — אז חייבים לרוקן גם כאן, לפני ששולחים ללקוח.
+  // משתמש רגיל עם hidePstatus/hideNotes (למשל דניאל): זה מגיע ישר ממאנדיי
+  // (ראו toTask למעלה), בעקיפת המאגר המוצפן שבו build_site.py כבר ריקן את
+  // השדות האלה — אז חייבים לרוקן גם כאן, לפני ששולחים ללקוח.
   const byOwner = who.admin
     ? snap.byOwner
     : {
-        [who.id]: (snap.byOwner[who.id] || []).map((t) =>
-          who.hidePstatus ? { ...t, pstatus: "" } : t
-        ),
+        [who.id]: (snap.byOwner[who.id] || []).map((t) => ({
+          ...t,
+          ...(who.hidePstatus ? { pstatus: "" } : {}),
+          ...(who.hideNotes ? { notes: "" } : {}),
+        })),
       };
   return json({ ok: true, syncedAt: snap.syncedAt, byOwner });
 };
