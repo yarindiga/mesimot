@@ -180,9 +180,12 @@ def write_function_data(users, owners, store, by_owner):
     for owner in owners:
         u  = next((x for x in users if x["email"] == owner), None)
         who_by_token[store["writeTokens"][owner]] = {
-            "id":    store["blobIds"][owner],
-            "name":  u["name"] if u else "ללא שיוך",
-            "admin": bool(u.get("admin")) if u else False,
+            "id":          store["blobIds"][owner],
+            "name":        u["name"] if u else "ללא שיוך",
+            "admin":       bool(u.get("admin")) if u else False,
+            # hidePstatus: "רענון חי" (functions/refresh.mjs) שולף ישר ממאנדיי,
+            # בעקיפת המאגר המוצפן — ולכן חייב לרוקן "סטטוס הפרויקט" גם הוא.
+            "hidePstatus": bool(u.get("hidePstatus")) if u else False,
         }
     task_owner = {t["id"]: store["blobIds"][owner]
                   for owner in owners for t in by_owner[owner]}
@@ -263,8 +266,11 @@ def main():
 
     # מזהה אטום לכל מאגר, במקום האימייל — כדי שלא יהיו אימיילים בקוד המקור
     store.setdefault("blobIds", {})
+    store.setdefault("fullBlobIds", {})
+    store.setdefault("fullDataKeys", {})
     data_keys, blobs = {}, {}
     for owner in owners:
+        who = next((u for u in users if u["email"] == owner), None)
         bid = store["blobIds"].get(owner) or secrets.token_hex(8)
         store["blobIds"][owner] = bid
 
@@ -273,18 +279,43 @@ def main():
         store["dataKeys"][owner] = b64encode(dk).decode()
         data_keys[bid] = dk
 
-        who = next((u for u in users if u["email"] == owner), None)
         store.setdefault("writeTokens", {})
         wt = store["writeTokens"].get(owner) or secrets.token_urlsafe(24)
         store["writeTokens"][owner] = wt
+
+        hide = bool(who and who.get("hidePstatus"))
+        # מאגר זה הוא מה שהבעלים עצמו מתחבר אליו (bid/dk קבועים, לעולם לא
+        # מתבטלים — כדי ש"זכור אותי" הקיים ממשיך לעבוד בלי כניסה מחדש).
+        # למי שמסומן hidePstatus (למשל דניאל) — "סטטוס הפרויקט" מרוקן כבר כאן.
+        own_tasks = [dict(t, pstatus="") for t in by_owner[owner]] if hide else by_owner[owner]
         body = json.dumps({
             "name":  who["name"] if who else "ללא שיוך",
             "admin": bool(who.get("admin")) if who else False,
             "wt":    wt,
-            "tasks": by_owner[owner],
+            "tasks": own_tasks,
         }, ensure_ascii=False).encode()
         pad = (-len(body) - 16) % BUCKET          # ריפוד ברווחים — JSON.parse סובל אותם בסוף
         blobs[bid] = seal(dk, body + b" " * pad)
+
+        # hidePstatus: מאגר שני ונפרד, עם ההיסטוריה המלאה — רק המנהל מקבל
+        # אליו גישה (ראו mine למטה). הבעלים עצמו אף פעם לא רואה את ה-bid הזה.
+        if hide:
+            fbid = store["fullBlobIds"].get(owner) or secrets.token_hex(8)
+            store["fullBlobIds"][owner] = fbid
+
+            fsaved = store["fullDataKeys"].get(owner)
+            fdk = b64decode(fsaved) if fsaved else secrets.token_bytes(32)
+            store["fullDataKeys"][owner] = b64encode(fdk).decode()
+            data_keys[fbid] = fdk
+
+            fbody = json.dumps({
+                "name":  who["name"],
+                "admin": False,
+                "wt":    wt,
+                "tasks": by_owner[owner],
+            }, ensure_ascii=False).encode()
+            fpad = (-len(fbody) - 16) % BUCKET
+            blobs[fbid] = seal(fdk, fbody + b" " * fpad)
 
     for _ in range(DECOYS):                       # מאגרי דמה, בגודל הדלי הקטן ביותר
         blobs[secrets.token_hex(8)] = {
@@ -305,8 +336,12 @@ def main():
         store["salts"][u["email"]] = b64encode(salt).decode()
         kek = pbkdf2_hmac("sha256", u["password"].encode(), salt, ITERS, 32)
 
-        mine = set(store["blobIds"][o] for o in owners) if u.get("admin") \
-               else {store["blobIds"].get(u["email"])}
+        if u.get("admin"):
+            # מנהל: עבור בעלים עם hidePstatus מקבל את fullBlobIds (ההיסטוריה
+            # המלאה), לא את blobIds (המאגר המרוקן שהבעלים עצמו מתחבר אליו).
+            mine = set(store["fullBlobIds"].get(o) or store["blobIds"][o] for o in owners)
+        else:
+            mine = {store["blobIds"].get(u["email"])}
         keys = [{"of": bid, "wrapped": seal(kek, data_keys[bid])} if bid in mine and bid in data_keys
                 else decoy_key(bid)
                 for bid in slots]                 # לכל רשומה בדיוק אותו מספר מפתחות
