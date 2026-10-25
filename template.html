@@ -1672,17 +1672,21 @@ button,input,select,textarea{font:inherit;color:inherit}
     var tels = contactsIn(t.notes).concat(contactsIn(t.desc)).filter(function(c){
       var k = c.tel.replace(/\D/g, ""); if (seen[k]) return false; seen[k] = 1; return true;
     }).slice(0, 10);   // בבניינים עם עשרות דיירים — כל המספרים ממילא בטקסט שמתחת
-    // כפתורי חיוג נשארים גלויים בלי צורך לפתוח כלום — זו הפעולה המהירה.
-    if (tels.length){
-      html += '<div class="tels">' + tels.map(function(c){
-        var label = c.name || c.tel;
-        return '<a class="telchip' + (c.name ? "" : " num") + '" href="tel:' + c.tel.replace(/\D/g, "") + '"' +
-               ' title="' + esc(c.name ? c.name + " · " + c.tel : c.tel) + '"' +
-               ' aria-label="חיוג ל-' + esc(label) + '">' + PHONE_ICON + "<span>" + esc(label) + "</span></a>";
-      }).join("") + "</div>";
+    // כפתורי החיוג וגם הטקסט המלא — שניהם בתוך "אנשי קשר" המתקפל, כדי שלא
+    // יתחרו ויזואלית עם תיאור המשימה.
+    if (tels.length || t.notes){
+      var body = "";
+      if (tels.length){
+        body += '<div class="tels">' + tels.map(function(c){
+          var label = c.name || c.tel;
+          return '<a class="telchip' + (c.name ? "" : " num") + '" href="tel:' + c.tel.replace(/\D/g, "") + '"' +
+                 ' title="' + esc(c.name ? c.name + " · " + c.tel : c.tel) + '"' +
+                 ' aria-label="חיוג ל-' + esc(label) + '">' + PHONE_ICON + "<span>" + esc(label) + "</span></a>";
+        }).join("") + "</div>";
+      }
+      if (t.notes) body += '<p class="dbox">' + richText(t.notes) + "</p>";
+      html += collapsible("אנשי קשר", body);
     }
-    // הטקסט המלא של "אנשי קשר" מתקפל — כבר קיבלנו ממנו את כפתורי החיוג למעלה.
-    if (t.notes) html += collapsible("אנשי קשר", '<p class="dbox">' + richText(t.notes) + "</p>");
 
     if (t.pstatus){
       var tl = timelineHTML(t.pstatus);
