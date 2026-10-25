@@ -188,6 +188,9 @@ def write_function_data(users, owners, store, by_owner):
             # האלה גם הוא.
             "hidePstatus": bool(u.get("hidePstatus")) if u else False,
             "hideNotes":   bool(u.get("hideNotes")) if u else False,
+            # canEdit: functions/edit.mjs מאפשר כתיבה לתיאור/תאריך רק עם זה
+            # דלוק, וגם רק על משימה ששייכת ל-id של אותו משתמש (ראו שם).
+            "canEdit":     bool(u.get("canEdit")) if u else False,
         }
     task_owner = {t["id"]: store["blobIds"][owner]
                   for owner in owners for t in by_owner[owner]}
@@ -298,10 +301,14 @@ def main():
             return t
         own_tasks = [_redact(t) for t in by_owner[owner]] if hide else by_owner[owner]
         body = json.dumps({
-            "name":  who["name"] if who else "ללא שיוך",
-            "admin": bool(who.get("admin")) if who else False,
-            "wt":    wt,
-            "tasks": own_tasks,
+            "name":    who["name"] if who else "ללא שיוך",
+            "admin":   bool(who.get("admin")) if who else False,
+            # canEdit: הלקוח מציג את כפתור "עריכת משימה" לפי זה. ההרשאה
+            # האמיתית נאכפת בצד השרת (functions/edit.mjs) דרך who.canEdit
+            # ב-APP_USERS — זה רק קובע אם מראים את הכפתור בכלל.
+            "canEdit": bool(who.get("canEdit")) if who else False,
+            "wt":      wt,
+            "tasks":   own_tasks,
         }, ensure_ascii=False).encode()
         pad = (-len(body) - 16) % BUCKET          # ריפוד ברווחים — JSON.parse סובל אותם בסוף
         blobs[bid] = seal(dk, body + b" " * pad)
