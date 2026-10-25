@@ -1010,7 +1010,7 @@ button,input,select,textarea{font:inherit;color:inherit}
       var desc = String(t.desc || "").replace(/\s+/g, " ").trim();
       if (desc) line += " - " + desc;
       return line;
-    }).join("\n");
+    }).join("\n\n");
   }
 
   async function copyToClipboard(text){
