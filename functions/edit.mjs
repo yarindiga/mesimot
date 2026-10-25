@@ -4,6 +4,11 @@
 // מותר רק למשתמש עם canEdit (נקבע ב-users.json, נדחף ל-APP_USERS על ידי
 // build_site.py), ורק על משימה ששייכת לו (OWNERS[taskId] === who.id) —
 // בלי עקיפה למנהל. ראו shared/_owners.mjs ו-functions/updates.mjs לאותו דפוס.
+//
+// כל עריכה שמצליחה נרשמת גם במאגר "task-updates" (אותו מאגר של סימוני
+// סטטוס, functions/updates.mjs) תחת מפתח _edit_, כדי שהיא תופיע במסך
+// "עדכונים" אצל המנהל — ראו שם את ה-GET.
+import { getStore } from "@netlify/blobs";
 import { OWNERS } from "../shared/_owners.mjs";
 
 const USERS = JSON.parse(process.env.APP_USERS || "{}");
@@ -66,6 +71,9 @@ export default async (req) => {
   const date = String(body.date || "");
   if (!RE_DATE.test(date)) return json({ error: "bad_date" }, 400);
   const desc = String(body.desc || "").slice(0, 4000);
+  const prevDesc = String(body.prevDesc || "").slice(0, 4000);
+  const prevDate = String(body.prevDate || "").slice(0, 20);
+  const addr = String(body.addr || "").slice(0, 120);
 
   if (!MONDAY_TOKEN) return json({ error: "no_token" }, 500);
 
@@ -74,6 +82,17 @@ export default async (req) => {
   } catch (e) {
     return json({ error: "monday_push_failed", detail: String(e?.message || e).slice(0, 300) }, 502);
   }
+
+  // רישום ל"עדכונים" — לא קריטי: אם זה נכשל, העריכה במאנדיי כבר הצליחה
+  // ואין סיבה להחזיר שגיאה למשתמש בגלל זה.
+  try {
+    const store = getStore({ name: "task-updates", consistency: "strong" });
+    const at = Date.now();
+    await store.setJSON(`_edit_${at}_${taskId}`, {
+      taskId, kind: "edit", byId: who.id, byName: who.name, at,
+      addr, desc, prevDesc, date, prevDate,
+    });
+  } catch (_) { /* נחמד-להיות, לא קריטי */ }
 
   return json({ ok: true, desc, date });
 };

@@ -774,6 +774,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   var openId = null;     // המשימה הפתוחה — שורה מורחבת בטלפון, פאנל צדדי במחשב
   var clearedAt = 0;     // מנהל בלבד: חותם הזמן של "ניקוי" אחרון במסך העדכונים
   var history = [];      // מנהל בלבד: כל העדכונים שנרשמו אי פעם, גם אחרי ניקוי
+  var editLog = [];      // מנהל בלבד: עריכות תיאור/מועד עדיין לא מנוקות (ראו functions/edit.mjs)
   var updatesSub = "active"; // "active" | "history"
   var visits;             // מנהל בלבד: יומן כניסות השבוע האחרון. undefined = עוד לא נטען, null = שגיאה
 
@@ -893,6 +894,7 @@ button,input,select,textarea{font:inherit;color:inherit}
       (d.updates || []).forEach(function(u){ marks[u.taskId] = u; });
       clearedAt = d.clearedAt || 0;
       history = d.history || [];
+      editLog = d.edits || [];
       statusOn = true;
       cacheMarks();
       renderAll();
@@ -1056,7 +1058,10 @@ button,input,select,textarea{font:inherit;color:inherit}
       var r = await fetch(EDIT_API, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ t: myToken(), taskId: t.id, desc: desc, date: date }),
+        body: JSON.stringify({
+          t: myToken(), taskId: t.id, desc: desc, date: date,
+          prevDesc: t.desc || "", prevDate: t.date || "", addr: t.addr,
+        }),
       });
       var d = await r.json().catch(function(){ return {}; });
       if (!r.ok || !d.ok) throw new Error((d && d.error) || r.status);
@@ -1064,6 +1069,7 @@ button,input,select,textarea{font:inherit;color:inherit}
       t.desc = desc; t.date = date;
       closePop();
       toast("המשימה עודכנה במאנדיי");
+      pullMarks();   // כדי שהעריכה תופיע מיד במסך "עדכונים" אצל המנהל
       if (!visible(t)){
         pinned[t.id] = Date.now() + 10000;
         renderAll();
@@ -1211,7 +1217,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 
   function renderAll(){
     if (!session) return;
-    var n = Object.keys(marks).filter(function(k){ return (marks[k].at || 0) > clearedAt; }).length;
+    var n = Object.keys(marks).filter(function(k){ return (marks[k].at || 0) > clearedAt; }).length + editLog.length;
     $("uBadge").textContent = n;
     $("toUpdates").hidden = !(session.isAdmin && statusOn && view === "tasks");
     $("toVisits").hidden  = !(session.isAdmin && view === "tasks");
@@ -1383,7 +1389,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 
     var list = isHistory
       ? history.slice()
-      : Object.keys(marks).map(function(k){ return marks[k]; }).filter(function(u){ return (u.at || 0) > clearedAt; });
+      : Object.keys(marks).map(function(k){ return marks[k]; }).filter(function(u){ return (u.at || 0) > clearedAt; }).concat(editLog);
     list.sort(function(a, b){ return (b.at || 0) - (a.at || 0); });
 
     if (session.isAdmin){
@@ -1409,7 +1415,7 @@ button,input,select,textarea{font:inherit;color:inherit}
       empty.className = "empty";
       empty.innerHTML = isHistory
         ? "<strong>אין היסטוריה עדיין</strong>כאן יופיעו כל העדכונים שנרשמו אי פעם."
-        : "<strong>אין עדכונים חדשים</strong>כשמישהו יסמן משימה כעדיין לא, בטיפול או בוצע, היא תופיע כאן.";
+        : "<strong>אין עדכונים חדשים</strong>כשמישהו יסמן משימה, יוסיף הערה או יערוך משימה, זה יופיע כאן.";
       box.appendChild(empty);
       return;
     }
@@ -1427,20 +1433,35 @@ button,input,select,textarea{font:inherit;color:inherit}
         wrap.appendChild(h);
       }
       var who = u.byName || "—";
-      var chipColors = { "בוצע": ["#00c875", "#062b18"], "בטיפול": ["#fdab3d", "#3d2a06"], "עדיין לא": ["#007eb5", "#eaf6ff"] };
-      var cc = chipColors[u.status] || chipColors["בטיפול"];
       var el = document.createElement("div");
       el.className = "uitem";
-      el.innerHTML =
-        '<span class="uava">' + esc(who.slice(0, 1)) + "</span>" +
-        '<div class="ubody">' +
-          '<div class="uhead">' +
-            '<span class="uaddr">' + esc(u.addr || u.taskId) + "</span>" +
-            '<span class="chip" style="background:' + cc[0] + ';color:' + cc[1] + '">' + esc(u.status) + "</span>" +
-            '<span class="utime">' + esc(who) + " · " + timeLabel(u.at) + "</span>" +
-          "</div>" +
-          (u.note ? '<div class="unote">' + esc(u.note) + "</div>" : "") +
-        "</div>";
+      if (u.kind === "edit"){
+        var dateChanged = u.date !== u.prevDate;
+        el.innerHTML =
+          '<span class="uava">' + esc(who.slice(0, 1)) + "</span>" +
+          '<div class="ubody">' +
+            '<div class="uhead">' +
+              '<span class="uaddr">' + esc(u.addr || u.taskId) + "</span>" +
+              '<span class="chip" style="background:var(--accent-soft);color:var(--accent)">עריכת משימה</span>' +
+              '<span class="utime">' + esc(who) + " · " + timeLabel(u.at) + "</span>" +
+            "</div>" +
+            (dateChanged ? '<div class="unote">מועד הפולו אפ עודכן ל-' + esc(short(u.date)) + "</div>" : "") +
+            (u.desc ? '<div class="unote">' + esc(oneLine(u.desc)) + "</div>" : "") +
+          "</div>";
+      } else {
+        var chipColors = { "בוצע": ["#00c875", "#062b18"], "בטיפול": ["#fdab3d", "#3d2a06"], "עדיין לא": ["#007eb5", "#eaf6ff"] };
+        var cc = chipColors[u.status] || chipColors["בטיפול"];
+        el.innerHTML =
+          '<span class="uava">' + esc(who.slice(0, 1)) + "</span>" +
+          '<div class="ubody">' +
+            '<div class="uhead">' +
+              '<span class="uaddr">' + esc(u.addr || u.taskId) + "</span>" +
+              '<span class="chip" style="background:' + cc[0] + ';color:' + cc[1] + '">' + esc(u.status) + "</span>" +
+              '<span class="utime">' + esc(who) + " · " + timeLabel(u.at) + "</span>" +
+            "</div>" +
+            (u.note ? '<div class="unote">' + esc(u.note) + "</div>" : "") +
+          "</div>";
+      }
       wrap.appendChild(el);
     });
     box.appendChild(wrap);
@@ -1847,7 +1868,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   $("toTasks").addEventListener("click",   function(){ view = "tasks";   renderAll(); });
   $("logout").addEventListener("click", function(){
     session = null; marks = {}; view = "tasks"; autoResumed = false; forget();
-    clearedAt = 0; history = []; updatesSub = "active"; openId = null; visits = undefined;
+    clearedAt = 0; history = []; editLog = []; updatesSub = "active"; openId = null; visits = undefined;
     $("resumed").hidden = true;
     $("viewing").hidden = true;
     $("adminbar").innerHTML = ""; $("adminbarWrap").hidden = true;

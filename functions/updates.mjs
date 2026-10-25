@@ -86,6 +86,7 @@ export default async (req) => {
     const updates = [];
     const allMarks = [];
     const logKeys = [];
+    const editEvents = []; // עריכות תיאור/מועד (functions/edit.mjs) — נפרד מ-marks בכוונה, ראו למטה
     let clearedAt = 0;
     for (const b of blobs) {
       if (b.key === "_clearedAt") {
@@ -105,6 +106,13 @@ export default async (req) => {
         continue;
       }
       if (b.key.startsWith("_log_")) { logKeys.push(b.key); continue; }
+      // עריכות חיות תמיד במפתח נפרד משלהן (אף פעם לא נדרסות) — לא במפתח
+      // taskId החשוף, כדי לא לדרוס שם את סימון הסטטוס הפעיל של אותה משימה.
+      if (b.key.startsWith("_edit_")) {
+        const rec = await store.get(b.key, { type: "json" });
+        if (rec) editEvents.push(rec);
+        continue;
+      }
       const rec = await store.get(b.key, { type: "json" });
       if (!rec) continue;
       const item = { taskId: b.key, ...rec };
@@ -113,9 +121,11 @@ export default async (req) => {
     }
     updates.sort((a, b) => (b.at || 0) - (a.at || 0));
     const resp = { updates };
-    // רק המנהל צריך את היסטוריית-הכול ואת חותם הניקוי — לצוות מספיק המצב הנוכחי.
+    // רק המנהל צריך את היסטוריית-הכול, את העריכות ואת חותם הניקוי — לצוות מספיק המצב הנוכחי.
     if (who.admin) {
       resp.clearedAt = clearedAt;
+      resp.edits = editEvents.filter((e) => (e.at || 0) > clearedAt).sort((a, b) => (b.at || 0) - (a.at || 0));
+
       const history = (await Promise.all(logKeys.map((k) => store.get(k, { type: "json" })))).filter(Boolean);
 
       // השלמה: סימון שקיים אבל אין לו רישום בלוג (נוצר לפני שהלוג היה קיים, או אבד
@@ -124,7 +134,7 @@ export default async (req) => {
       const missing = allMarks.filter((m) => !logged.has(m.taskId + "_" + m.at));
       for (const m of missing) await store.setJSON(`_log_${m.at}_${m.taskId}`, m);
 
-      resp.history = history.concat(missing).sort((a, b) => (b.at || 0) - (a.at || 0));
+      resp.history = history.concat(missing).concat(editEvents).sort((a, b) => (b.at || 0) - (a.at || 0));
     }
     return json(resp);
   }
