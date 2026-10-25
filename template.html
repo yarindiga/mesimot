@@ -202,7 +202,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .stat.notyet b{color:var(--notyet)}
 .synced{margin:9px 0 0;font-size:11.5px;color:var(--muted)}
 .refreshbtn{
-  display:inline-flex;align-items:center;gap:6px;margin-top:9px;
+  display:inline-flex;align-items:center;gap:6px;margin-top:9px;margin-inline-end:8px;
   border:1px solid var(--line-strong);border-radius:99px;background:var(--surface);
   color:var(--ink-2);font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer;
   transition:background .15s,border-color .15s;
@@ -635,6 +635,10 @@ button,input,select,textarea{font:inherit;color:inherit}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
       <span>רענון מאנדיי</span>
     </button>
+    <button class="refreshbtn" id="copyTasksBtn" type="button" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      <span id="copyTasksLabel">העתק משימות</span>
+    </button>
   </section>
 
   <div class="banner" id="resumed" hidden></div>
@@ -993,6 +997,43 @@ button,input,select,textarea{font:inherit;color:inherit}
   function visible(t){ return showFuture || !t.date || t.date <= TODAY; }
   function countVisible(id){ return (session.sets[id].tasks || []).filter(visible).length; }
 
+  /* ---------- העתקת משימות לוואטסאפ (מנהל בלבד) ---------- */
+  var COPY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+
+  // שורה אחת לכל משימה: *כתובת* - תיאור. בסדר הלוח (t.ord), רק משימות
+  // "פתוחות" להצגה (היום ומה שלפניו, או הכל אם סומן "הצג עתידיות").
+  function tasksText(id){
+    var list = ((session.sets[id] || {}).tasks || []).filter(visible)
+                 .slice().sort(function(a, b){ return a.ord - b.ord; });
+    return list.map(function(t){
+      var line = "*" + (t.name || "") + "*";
+      var desc = String(t.desc || "").replace(/\s+/g, " ").trim();
+      if (desc) line += " - " + desc;
+      return line;
+    }).join("\n");
+  }
+
+  async function copyToClipboard(text){
+    try { await navigator.clipboard.writeText(text); return true; }
+    catch (_){
+      try {
+        var ta = document.createElement("textarea");
+        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        var ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      } catch (_){ return false; }
+    }
+  }
+
+  async function copyTasksFor(id){
+    var text = tasksText(id);
+    if (!text){ toast("אין משימות להעתקה"); return; }
+    var ok = await copyToClipboard(text);
+    toast(ok ? "הועתק — " + labelOf(id) : "ההעתקה נכשלה", !ok);
+  }
+
   function enterApp(){
     $("gate").hidden = true;
     $("app").hidden  = false;
@@ -1021,6 +1062,7 @@ button,input,select,textarea{font:inherit;color:inherit}
       $("futureWrap").hidden = false;
     }
     $("refreshBtn").hidden = !session.isAdmin;
+    $("copyTasksBtn").hidden = !session.isAdmin;
     var rb = $("resumed");
     if (autoResumed){
       rb.hidden = false;
@@ -1123,6 +1165,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     $("toolbar").hidden = false;
     var mine = (active === session.meId);
     $("viewTitle").textContent = mine ? "המשימות שלי" : "משימות · " + labelOf(active);
+    if (session.isAdmin) $("copyTasksLabel").textContent = "העתק משימות · " + labelOf(active);
 
     var vb = $("viewing");
     vb.hidden = mine;
@@ -1666,6 +1709,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     }
   }
   $("refreshBtn").addEventListener("click", refreshFromMonday);
+  $("copyTasksBtn").addEventListener("click", function(){ copyTasksFor(active); });
 
   // קריאה פסיבית (בלי לגעת במאנדיי) — מושכת את מה שהמנהל שידר לאחרונה, אם
   // יש כזה ואם הוא תואם לסנכרון המלא שהדף הנוכחי נבנה ממנו. רצה אצל כולם,
@@ -1700,6 +1744,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     $("futureWrap").hidden = true; $("future").checked = false; showFuture = false;
     $("toUpdates").hidden = true; $("toVisits").hidden = true; $("toTasks").hidden = true;
     $("refreshBtn").hidden = true;
+    $("copyTasksBtn").hidden = true;
     $("search").value = ""; query = ""; statusFilter = "all";
     $("filters").innerHTML = ""; $("filters").hidden = true;
     $("content").innerHTML = ""; $("updatesView").innerHTML = ""; $("pane").innerHTML = "";
