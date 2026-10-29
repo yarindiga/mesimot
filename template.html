@@ -1372,6 +1372,7 @@ button,input,select,textarea{font:inherit;color:inherit}
       if (!r.ok) throw new Error(r.status);
       var d = await r.json();
       clearedAt = d.clearedAt || Date.now();
+      editLog = editLog.filter(function(u){ return (u.at || 0) > clearedAt; });
       toast("נוקה");
       renderAll();
     } catch (err){
