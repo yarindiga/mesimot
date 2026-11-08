@@ -195,11 +195,21 @@ def write_function_data(users, owners, store, by_owner):
     task_owner = {t["id"]: store["blobIds"][owner]
                   for owner in owners for t in by_owner[owner]}
 
+    # עבור בעלים עם hidePstatus/hideNotes (למשל דניאל) יש שני מאגרים: זה
+    # שהבעלים עצמו מתחבר אליו (blobIds, מרוקן) וזה שרק המנהל מפענח כדי לראות
+    # את ההיסטוריה המלאה (fullBlobIds). "רענון חי" (functions/refresh.mjs)
+    # מכיר רק blobIds — בלי השיוך הזה, עדכון חי לא היה מגיע לטאב של המנהל
+    # כשהוא צופה באותו בעלים, כי session.sets בצד הלקוח מפתח אותו תחת
+    # fullBlobIds, לא blobIds.
+    full_alias = {store["blobIds"][owner]: store["fullBlobIds"][owner]
+                  for owner in owners if store["fullBlobIds"].get(owner)}
+
     sdir = os.path.join(HERE, "shared")
     os.makedirs(sdir, exist_ok=True)
     with open(os.path.join(sdir, "_owners.mjs"), "w", encoding="utf-8") as f:
         f.write("// נוצר אוטומטית על ידי build_site.py. אין כאן סודות.\n")
         f.write("export const OWNERS = %s;\n" % json.dumps(task_owner, ensure_ascii=False))
+        f.write("export const FULL_ALIAS = %s;\n" % json.dumps(full_alias, ensure_ascii=False))
 
     push_env("APP_USERS", json.dumps(who_by_token, ensure_ascii=False, separators=(",", ":")))
 

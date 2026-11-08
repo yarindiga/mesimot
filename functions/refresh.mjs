@@ -18,7 +18,7 @@
 // למטה) והמשימה "זזה" לבעלים הנכון כבר ברענון החי, בלי לחכות לסנכרון המלא.
 // משימה חדשה לגמרי, שהאימייל שלה לא מזוהה בכלל, עדיין ממתינה לסנכרון היומי.
 import { getStore } from "@netlify/blobs";
-import { OWNERS } from "../shared/_owners.mjs";
+import { OWNERS, FULL_ALIAS } from "../shared/_owners.mjs";
 
 const USERS = JSON.parse(process.env.APP_USERS || "{}");
 const MONDAY_TOKEN = process.env.MONDAY_TOKEN || "";
@@ -149,6 +149,13 @@ async function liveFetch() {
     if (!ownerId) { newCount++; continue; }
     if (!byOwner[ownerId]) byOwner[ownerId] = [];
     byOwner[ownerId].push(toTask(i, item, col));
+  }
+
+  // בעלים עם hidePstatus/hideNotes: לשכפל את הרשימה גם תחת ה-id שהמנהל
+  // מפענח (fullBlobIds) — אחרת העדכון החי לא מגיע לטאב שלו בלוח המנהל
+  // (ראו ההערה ב-build_site.py על FULL_ALIAS).
+  for (const [bid, fullId] of Object.entries(FULL_ALIAS)) {
+    byOwner[fullId] = byOwner[bid] || [];
   }
 
   return { byOwner, newCount };
